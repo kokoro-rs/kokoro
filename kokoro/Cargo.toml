@@ -1,0 +1,22 @@
+workspace = { members = ["kokoro-macros"] }
+[package]
+name = "kokoro"
+version = "0.0.9"
+edition = "2021"
+
+[features]
+nightly = []
+[dependencies]
+flume = "0.11.0"
+parking_lot = "0.12.1"
+rand = "0.8.5"
+rayon = "1.8.1"
+
+[dependencies.dashmap]
+version = "5.5.3"
+features = ["rayon","inline"]
+
+[dependencies.kokoro-macros]
+version = "0.1.0"
+path = "./kokoro-macros"
+
