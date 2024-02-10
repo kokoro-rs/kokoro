@@ -1,5 +1,6 @@
 use std::fmt::Display;
 use kokoro::prelude::*;
+use kokoro_default_impl::thread::*;
 
 fn main() {
     let ctx = Context::default();

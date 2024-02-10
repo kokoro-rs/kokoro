@@ -2,17 +2,20 @@ use crate::context::{
     scope::{LocalCache, Scope, Triggerable},
     Context,
 };
-use flume::unbounded;
+use crate::mpsc;
 use parking_lot::Mutex;
 use std::sync::Arc;
-
+impl<T: Send + Sync> LocalCache for T {}
+/// The root's cache
 pub struct RootCache {
     runner: Mutex<RunnerCache>,
 }
+/// Runner wrapper
 pub struct RunnerCache(Box<dyn FnMut(&Context<RootCache>) + 'static>);
 unsafe impl Send for RunnerCache {}
 unsafe impl Sync for RunnerCache {}
 impl RunnerCache {
+    /// Wrap a runner
     pub fn new<F>(runner: F) -> Self
     where
         F: FnMut(&Context<RootCache>) + 'static,
@@ -27,14 +30,13 @@ impl Default for RootCache {
         }
     }
 }
-impl LocalCache for RootCache {}
 
-impl Default for Context<RootCache> {
+pub trait MyDefault {
+    fn default() -> Self;
+}
+impl MyDefault for Context<RootCache> {
     fn default() -> Self {
-        Scope::build(Arc::new(RootCache::default()), |s| {
-            Context::new(s, unbounded())
-        })
-        .1
+        Scope::build(Arc::new(RootCache::default()), |s| Context::new(s, mpsc())).1
     }
 }
 pub trait RunnableContext {

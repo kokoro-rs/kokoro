@@ -1,4 +1,4 @@
-use kokoro::default_implement::plugin::*;
+use kokoro_default_impl::plugin::*;
 use kokoro::prelude::*;
 
 fn main() {

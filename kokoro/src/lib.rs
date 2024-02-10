@@ -1,11 +1,10 @@
 #![cfg_attr(feature = "nightly", feature(unboxed_closures))]
 #![cfg_attr(feature = "nightly", feature(fn_traits))]
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 /// The heart of Kokoro is the Context
 pub mod context;
 /// Some useful implementations
-pub mod default_implement;
 /// Abstract what can be disposed
 pub mod disposable;
 /// Traits of the event to be publish
@@ -14,15 +13,20 @@ pub mod event;
 pub mod schedule;
 /// Subscribers, which are executed when a message is received
 pub mod subscriber;
+/// Basic implementation
+pub mod base_impl;
 pub use flume::unbounded as mpsc;
+pub use flume;
 /// Default export
 pub mod prelude {
     pub use super::context::*;
-    pub use super::default_implement::{base::*, thread::*};
     pub use super::disposable::*;
     pub use super::event::*;
     pub use super::schedule::*;
     pub use super::subscriber::*;
+    pub use super::base_impl::*;
+    #[cfg(feature = "macros")]
     pub use kokoro_macros::*;
 }
+#[cfg(feature = "macros")]
 pub use kokoro_macros::*;

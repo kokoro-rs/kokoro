@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::context::{
+use kokoro::context::{
     scope::{LocalCache, Scope, Triggerable},
     Context,
 };
@@ -12,7 +12,6 @@ pub trait Plugin: LocalCache {
     /// Name of the plugin
     fn name(&self) -> &'static str;
 }
-impl<P: Plugin> LocalCache for P {}
 /// Impl this for plug-ins
 pub trait Pluginable<T: LocalCache, P: Plugin + 'static> {
     /// Call this for plug-ins

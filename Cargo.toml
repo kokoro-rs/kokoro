@@ -1,0 +1,15 @@
+[workspace]
+members = ["kokoro", "kokoro-default-impl", "kokoro-macros"]
+
+[package]
+name = "Kokoro-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies.kokoro]
+version = "0.0.9"
+path = "./kokoro"
+
+[dependencies.kokoro-default-impl]
+version = "0.0.9"
+path = "./kokoro-default-impl"
