@@ -5,7 +5,7 @@ use std::sync::Arc;
 fn main() {
     static I: AtomicI32 = AtomicI32::new(0);
     let ctx = Context::default();
-    // 闭包可以捕获环境，在这里就是原子 I
+    // A closure can capture the environment, which in this case is atom I
     ctx.subscribe(|| {
         I.fetch_add(1, Relaxed);
     });
@@ -16,7 +16,10 @@ fn main() {
         println!("{}", I.load(Relaxed));
     });
     ctx.runner(custom_runner);
-    ctx.run()
+    ctx.run();
+    /* Typically, the output will be :
+     *  3
+    */
 }
 #[derive(Event)]
 struct Print;

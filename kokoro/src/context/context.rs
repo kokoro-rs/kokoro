@@ -38,13 +38,14 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
             sender: self.sender.clone(),
         }
     }
-    /// Gets the timeline of the node in the current scope.
+    /// Gets the schedule of the node in the current scope.
     ///
     /// Note: It is not a get-schedule that includes the parent node
     #[inline]
     pub fn schedule(&self) -> Arc<Schedule<T>> {
         self.scope().schedule()
     }
+    /// Publish an event to the main channel
     #[inline]
     pub fn publish<E>(&self, event: E) -> &Self
     where
@@ -53,6 +54,7 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
         self.sender.send(Arc::new(event)).unwrap();
         self
     }
+    /// Register a subscriber for the main channel
     #[inline]
     pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<T>, T>>
     where
@@ -61,6 +63,9 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
     {
         DisposableHandle::new(self.schedule().insert(sub))
     }
+    /// Get a consumer of the primary channel
+    /// 
+    /// Note: An event is consumed only once, even if multiple consumers cannot process the same event
     #[inline]
     pub fn receiver(&self) -> Receiver<Arc<SSE>> {
         self.receiver.clone()
@@ -74,13 +79,3 @@ impl<T: LocalCache + 'static> Deref for Context<T> {
         self.scope.as_ref().cache.as_ref()
     }
 }
-/*pub fn default_runner(ctx: Context<RootScope>) {
-    for e in ctx.receiver() {
-        let ctx = ctx.get_global();
-        thread::spawn(move || {
-            ctx.all_schedule()
-                .par_bridge()
-                .for_each(|s| s.read().trigger(Arc::clone(&e), &ctx))
-        });
-    }
-}*/

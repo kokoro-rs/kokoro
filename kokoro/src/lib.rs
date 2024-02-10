@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "nightly", feature(unboxed_closures))]
 #![cfg_attr(feature = "nightly", feature(fn_traits))]
 #![warn(missing_docs)]
+#![warn(clippy::inline_always)]
 #![doc = include_str!("../README.md")]
 /// The heart of Kokoro is the Context
 pub mod context;

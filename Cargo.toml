@@ -2,8 +2,7 @@
 members = ["kokoro", "kokoro-default-impl", "kokoro-macros"]
 
 [package]
-name = "Kokoro-rs"
-version = "0.1.0"
+name = "kokoro-rs"
 edition = "2021"
 
 [dependencies.kokoro]
@@ -13,3 +12,4 @@ path = "./kokoro"
 [dependencies.kokoro-default-impl]
 version = "0.0.9"
 path = "./kokoro-default-impl"
+

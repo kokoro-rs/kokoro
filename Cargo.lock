@@ -3,14 +3,6 @@
 version = 3
 
 [[package]]
-name = "Kokoro-rs"
-version = "0.1.0"
-dependencies = [
- "kokoro",
- "kokoro-default-impl",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -158,6 +150,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "kokoro-rs"
+version = "0.0.0"
+dependencies = [
+ "kokoro",
+ "kokoro-default-impl",
 ]
 
 [[package]]

@@ -16,6 +16,10 @@ fn main() {
         }
     });
     ctx.run();
+    /* Typically, the output will be :
+     *  Hello World
+     *  ...
+    */
 }
 
 #[derive(Event)]

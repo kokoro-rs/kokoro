@@ -5,6 +5,12 @@ fn main() {
     ctx.plugin(PF);
     ctx.publish(PhantomEvent);
     ctx.run();
+    /* Typically, the output will be :
+     *  Hello SF
+     *  Hello PF
+     *  From: SF
+     *  From: PF
+     */
 }
 
 struct PF;

@@ -8,7 +8,11 @@ fn main() {
         message: "Bye World".to_string(),
     });
     ctx.plugin(N);
-    ctx.run()
+    ctx.run();
+    /* Typically, the output will be :
+     *  Hello Plugin
+     *  Bye World
+     */
 }
 struct P {
     content: String,

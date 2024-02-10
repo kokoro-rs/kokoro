@@ -16,6 +16,7 @@ unsafe impl Send for RunnerCache {}
 unsafe impl Sync for RunnerCache {}
 impl RunnerCache {
     /// Wrap a runner
+    #[inline(always)]
     pub fn new<F>(runner: F) -> Self
     where
         F: FnMut(&Context<RootCache>) + 'static,
@@ -24,6 +25,7 @@ impl RunnerCache {
     }
 }
 impl Default for RootCache {
+    #[inline(always)]
     fn default() -> Self {
         RootCache {
             runner: Mutex::new(RunnerCache::new(default_runner)),
@@ -31,26 +33,30 @@ impl Default for RootCache {
     }
 }
 
-pub trait MyDefault {
-    fn default() -> Self;
-}
-impl MyDefault for Context<RootCache> {
+impl Default for Context<RootCache> {
+    #[inline(always)]
     fn default() -> Self {
         Scope::build(Arc::new(RootCache::default()), |s| Context::new(s, mpsc())).1
     }
 }
+/// That can be run by a runner
 pub trait RunnableContext {
+    /// Register a runner
     fn runner<F: FnMut(&Self) + 'static>(&self, runner: F);
+    /// Utility runner run context
     fn run(&self);
 }
 impl RunnableContext for Context<RootCache> {
+    #[inline(always)]
     fn runner<F: FnMut(&Context<RootCache>) + 'static>(&self, runner: F) {
         self.scope().cache.runner.lock().0 = Box::new(runner);
     }
+    #[inline(always)]
     fn run(&self) {
         self.scope().cache.runner.lock().0(self);
     }
 }
+/// The default runner
 pub fn default_runner(ctx: &Context<RootCache>) {
     for e in ctx.receiver() {
         let ctx = ctx.with(ctx.scope());
