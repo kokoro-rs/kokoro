@@ -109,14 +109,14 @@ pub fn event_id(input: TokenStream) -> TokenStream {
     let hash = hash(&type_string);
     let expanded = quote! {
         #[doc = #type_string]
-        impl kokoro::event::Event for #name {
-            fn event_id(&self) -> &'static kokoro::event::EventId where Self: Sized {
-                &kokoro::event::EventId(#hash)
+        impl kokoro::core::event::Event for #name {
+            fn event_id(&self) -> &'static kokoro::core::event::EventId where Self: Sized {
+                &kokoro::core::event::EventId(#hash)
             }
         }
         #[doc = stringify!(#hash)]
-        impl kokoro::event::EventID for #name {
-            const _EVENT_ID: &'static kokoro::event::EventId = &kokoro::event::EventId(#hash);
+        impl kokoro::core::event::EventID for #name {
+            const _EVENT_ID: &'static kokoro::core::event::EventId = &kokoro::core::event::EventId(#hash);
         }
         unsafe impl Send for #name {}
         unsafe impl Sync for #name {}

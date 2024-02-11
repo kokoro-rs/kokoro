@@ -6,6 +6,6 @@ edition = "2021"
 [dependencies]
 parking_lot = "^0.12.1"
 
-[dependencies.kokoro]
+[dependencies.kokoro-core]
 version = "0.0.9"
-path = "../kokoro"
+path = "../kokoro-core"

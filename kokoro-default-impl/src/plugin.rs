@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use kokoro::context::{
+use kokoro_core::context::{
     scope::{LocalCache, Scope, Triggerable},
     Context,
 };

@@ -1,12 +1,10 @@
 [package]
-name = "kokoro"
+name = "kokoro-core"
 version = "0.0.9"
 edition = "2021"
 
 [features]
-default = ["macros"]
 nightly = []
-macros = ["dep:kokoro-macros"]
 
 [dependencies]
 flume = "^0.11.0"
@@ -17,8 +15,3 @@ rayon = "^1.8.1"
 [dependencies.dashmap]
 version = "^5.5.3"
 features = ["rayon", "inline"]
-
-[dependencies.kokoro-macros]
-version = "0.1.0"
-path = "../kokoro-macros"
-optional = true

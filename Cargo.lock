@@ -125,11 +125,19 @@ dependencies = [
 
 [[package]]
 name = "kokoro"
+version = "0.0.0"
+dependencies = [
+ "kokoro-core",
+ "kokoro-default-impl",
+ "kokoro-macros",
+]
+
+[[package]]
+name = "kokoro-core"
 version = "0.0.9"
 dependencies = [
  "dashmap",
  "flume",
- "kokoro-macros",
  "parking_lot",
  "rand",
  "rayon",
@@ -139,7 +147,7 @@ dependencies = [
 name = "kokoro-default-impl"
 version = "0.0.9"
 dependencies = [
- "kokoro",
+ "kokoro-core",
  "parking_lot",
 ]
 
@@ -150,14 +158,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "kokoro-rs"
-version = "0.0.0"
-dependencies = [
- "kokoro",
- "kokoro-default-impl",
 ]
 
 [[package]]

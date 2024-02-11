@@ -22,6 +22,11 @@ pub struct Scope<T: LocalCache + ?Sized> {
     /// Used to generate consecutive Scopeids that do not repeat
     pub scope_id_gen: Mutex<ScopeIdGen<StepRng>>,
 }
+impl<T: LocalCache + ?Sized> Drop for Scope<T> {
+    fn drop(&mut self) {
+        self.ctx.take();
+    }
+}
 /// Can be triggered
 pub trait Triggerable {
     /// All the subscribers triggered the current scope

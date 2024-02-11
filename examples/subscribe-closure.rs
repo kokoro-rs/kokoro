@@ -1,4 +1,4 @@
-use kokoro::{context::scope::Triggerable, prelude::*};
+use kokoro::{core::context::scope::Triggerable, prelude::*};
 use std::sync::atomic::{AtomicI32, Ordering::Relaxed};
 use std::sync::Arc;
 
@@ -19,7 +19,7 @@ fn main() {
     ctx.run();
     /* Typically, the output will be :
      *  3
-    */
+     */
 }
 #[derive(Event)]
 struct Print;

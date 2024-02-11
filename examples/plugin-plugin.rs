@@ -1,5 +1,4 @@
 use kokoro::prelude::*;
-use kokoro_default_impl::plugin::*;
 fn main() {
     let ctx = Context::default();
     ctx.plugin(PF);

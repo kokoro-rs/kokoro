@@ -18,16 +18,3 @@ pub mod subscriber;
 pub mod base_impl;
 pub use flume::unbounded as mpsc;
 pub use flume;
-/// Default export
-pub mod prelude {
-    pub use super::context::*;
-    pub use super::disposable::*;
-    pub use super::event::*;
-    pub use super::schedule::*;
-    pub use super::subscriber::*;
-    pub use super::base_impl::*;
-    #[cfg(feature = "macros")]
-    pub use kokoro_macros::*;
-}
-#[cfg(feature = "macros")]
-pub use kokoro_macros::*;

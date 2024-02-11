@@ -1,4 +1,4 @@
-use kokoro::{
+use kokoro_core::{
     context::{scope::LocalCache, Context},
     disposable::{Disposable, DisposableHandle},
 };
