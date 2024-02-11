@@ -4,7 +4,7 @@ use kokoro_core::{
 };
 use std::{
     sync::{atomic::AtomicBool, Arc},
-    thread::JoinHandle,
+    thread::{self, Builder, JoinHandle},
 };
 /// Spawn threads for the Context
 pub trait ThreadContext {
@@ -13,6 +13,12 @@ pub trait ThreadContext {
         &self,
         f: F,
     ) -> DisposableHandle<ThreadHandle<()>>;
+    /// Spawn a thread with Builder
+    fn spawn_with_builder<F: FnOnce(&Self, SignalHandle) + Send + 'static>(
+        &self,
+        builder: Builder,
+        f: F,
+    ) -> Result<DisposableHandle<ThreadHandle<()>>, std::io::Error>;
 }
 impl<T: LocalCache + 'static> ThreadContext for Context<T> {
     #[inline(always)]
@@ -23,8 +29,23 @@ impl<T: LocalCache + 'static> ThreadContext for Context<T> {
         let ctx = self.with(self.scope());
         let signal_handle = SignalHandle::new();
         let s = signal_handle.clone();
-        let join_handle = std::thread::spawn(move || f(&ctx, s));
+        let join_handle = thread::spawn(move || f(&ctx, s));
         DisposableHandle::new(ThreadHandle::new(join_handle, signal_handle))
+    }
+
+    fn spawn_with_builder<F: FnOnce(&Self, SignalHandle) + Send + 'static>(
+        &self,
+        builder: Builder,
+        f: F,
+    ) -> Result<DisposableHandle<ThreadHandle<()>>, std::io::Error> {
+        let ctx = self.with(self.scope());
+        let signal_handle = SignalHandle::new();
+        let s = signal_handle.clone();
+        let join_handle = builder.spawn(move || f(&ctx, s))?;
+        Ok(DisposableHandle::new(ThreadHandle::new(
+            join_handle,
+            signal_handle,
+        )))
     }
 }
 /// A handle used to dispose of a thread

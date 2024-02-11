@@ -125,10 +125,11 @@ dependencies = [
 
 [[package]]
 name = "kokoro"
-version = "0.0.0"
+version = "0.0.7"
 dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
+ "kokoro-dynamic-plugin",
  "kokoro-macros",
 ]
 
@@ -150,6 +151,10 @@ dependencies = [
  "kokoro-core",
  "parking_lot",
 ]
+
+[[package]]
+name = "kokoro-dynamic-plugin"
+version = "0.0.3"
 
 [[package]]
 name = "kokoro-macros"

@@ -1,15 +1,23 @@
 [workspace]
-members = ["kokoro-core", "kokoro-default-impl", "kokoro-macros"]
+members = [
+  "kokoro-core",
+  "kokoro-default-impl",
+  "kokoro-dynamic-plugin",
+  "kokoro-macros",
+  "kokoro-dynamic-plugin",
+]
 
 [package]
 name = "kokoro"
+version = "0.0.7"
 edition = "2021"
 
 [features]
-default = ["macros","default-impl"]
+default = ["macros", "default-impl"]
 nightly = ["kokoro-core/nightly"]
 macros = ["dep:kokoro-macros"]
 default-impl = ["dep:kokoro-default-impl"]
+dynamic-plugin = ["dep:kokoro-dynamic-plugin"]
 
 [dependencies.kokoro-core]
 version = "0.0.9"
@@ -23,4 +31,9 @@ optional = true
 [dependencies.kokoro-macros]
 version = "0.1.0"
 path = "./kokoro-macros"
+optional = true
+
+[dependencies.kokoro-dynamic-plugin]
+version = "0.0.3"
+path = "./kokoro-dynamic-plugin"
 optional = true
