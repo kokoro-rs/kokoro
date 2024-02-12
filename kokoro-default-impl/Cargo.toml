@@ -6,12 +6,8 @@ repository =  "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-default-impl
 description = "Kokoro's internal package, which implements some commonly used things"
 keywords = [
   "publish-subscribe",
-  "pub/sub",
   "kokoro",
   "aop",
-  "pattern",
-  "framework",
-  "fast",
   "eventbus",
   "pubsub",
 ]

@@ -6,12 +6,8 @@ repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-dynamic-plugi
 description = "Kokoro's internal package, which implements dynamic plug-in"
 keywords = [
   "publish-subscribe",
-  "pub/sub",
   "kokoro",
   "aop",
-  "pattern",
-  "framework",
-  "fast",
   "eventbus",
   "pubsub",
 ]

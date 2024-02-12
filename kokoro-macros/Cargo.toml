@@ -6,12 +6,8 @@ repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-macros"
 description = "Kokoro's internal package, which are used for auto derives"
 keywords = [
   "publish-subscribe",
-  "pub/sub",
   "kokoro",
   "aop",
-  "pattern",
-  "framework",
-  "fast",
   "eventbus",
   "pubsub",
 ]
