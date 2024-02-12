@@ -3,6 +3,8 @@
   <h1>Kokoro</h1>
 </div>
 
+Dynamic publish-subscribe pattern framework, AOP and Dynamic plugin support
+
 ## Simple publish/subscribe
 ### Demo
 ```rust
