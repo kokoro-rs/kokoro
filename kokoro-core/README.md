@@ -6,6 +6,8 @@
   Support for dynamic plug-ins and AOP
 </div>
 
+## Not yet stable, do not use in production !!
+
 ## Simple publish/subscribe
 
 ### Demo
