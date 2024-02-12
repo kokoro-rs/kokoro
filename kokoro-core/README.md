@@ -7,10 +7,11 @@
 
   <h2>Not yet stable, do not use in production !!</h2>
 </div>
+
 <br/>
-<br/>
-<br/>
+
 ## Simple publish/subscribe
+
 ```rust
 use std::fmt::Display;
 use kokoro::prelude::*;
@@ -46,9 +47,9 @@ fn sub_print(print: &Print) {
 ```
 
 <br/>
-<br/>
-<br/>
+
 ## Plug-in system with dynamic capabilities
+
 **APP**
 ```rust
 use kokoro::dynamic_plugin::*;
@@ -65,6 +66,7 @@ fn main() {
     */
 }
 ```
+
 **Plugin (Dynamic link library)**
 ```rust
 use std::sync::Arc;
