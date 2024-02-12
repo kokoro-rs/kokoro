@@ -1,11 +1,13 @@
-<div align="center">
+<div align="center" alt="Kokoro" width="100px">
   <img src="https://github.com/BERADQ/kokoro-rs/assets/78293733/57a6178e-186f-4526-8ff9-52dd88712daa"></img>
   <h1>Kokoro</h1>
+  Dynamic publish-subscribe pattern framework.
+  
+  Support for dynamic plug-ins and AOP
 </div>
 
-Dynamic publish-subscribe pattern framework, AOP and Dynamic plugin support
-
 ## Simple publish/subscribe
+
 ### Demo
 ```rust
 use std::fmt::Display;
