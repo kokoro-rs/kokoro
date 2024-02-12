@@ -54,10 +54,10 @@ impl<T: LocalCache + Send + Sync + ?Sized + 'static> Schedule<T> {
     /// Triggers a subscriber who has subscribed to an event in the schedule
     #[inline(always)]
     pub fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<T>) {
-        if let Some(mut subs) = self.subscribers.get_mut(e.event_id()) {
-            subs.par_iter_mut().for_each(move |sub| {
+        if let Some(subs) = self.subscribers.get_mut(e.event_id()) {
+            subs.par_iter().for_each_with(e.as_ref(), |e, sub| {
                 if let Some(sub) = sub.write().as_mut() {
-                    sub.run(e.as_ref(), ctx)
+                    sub.run(*e, ctx)
                 };
             });
         }
