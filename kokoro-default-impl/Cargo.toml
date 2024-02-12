@@ -1,11 +1,12 @@
 [package]
 name = "kokoro-default-impl"
-version = "0.0.9"
+version = "0.0.1"
 edition = "2021"
+repository =  "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-default-impl"
 
 [dependencies]
 parking_lot = "^0.12.1"
 
 [dependencies.kokoro-core]
-version = "0.0.9"
+version = "0.0.1"
 path = "../kokoro-core"

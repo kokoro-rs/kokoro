@@ -10,8 +10,9 @@ members = [
 
 [package]
 name = "kokoro"
-version = "0.0.7"
+version = "0.0.1"
 edition = "2021"
+repository = "https://github.com/Kokoro-rs/kokoro"
 
 [features]
 default = ["macros", "default-impl", "dynamic-plugin"]
@@ -21,20 +22,20 @@ default-impl = ["dep:kokoro-default-impl"]
 dynamic-plugin = ["dep:kokoro-dynamic-plugin"]
 
 [dependencies.kokoro-core]
-version = "0.0.9"
+version = "0.0.1"
 path = "./kokoro-core"
 
 [dependencies.kokoro-default-impl]
-version = "0.0.9"
+version = "0.0.1"
 path = "./kokoro-default-impl"
 optional = true
 
 [dependencies.kokoro-macros]
-version = "0.1.0"
+version = "0.0.1"
 path = "./kokoro-macros"
 optional = true
 
 [dependencies.kokoro-dynamic-plugin]
-version = "0.0.3"
+version = "0.0.1"
 path = "./kokoro-dynamic-plugin"
 optional = true

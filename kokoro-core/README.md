@@ -1,4 +1,4 @@
-<div align="center" alt="Kokoro" width="100px">
+<div align="center" alt="Kokoro">
   <img src="https://github.com/BERADQ/kokoro-rs/assets/78293733/57a6178e-186f-4526-8ff9-52dd88712daa"></img>
   <h1>Kokoro</h1>
   Dynamic publish-subscribe pattern framework.
