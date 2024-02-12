@@ -15,6 +15,7 @@ keywords = [
   "eventbus",
   "pubsub",
 ]
+license = "Apache-2.0/MIT"
 
 [features]
 nightly = []
