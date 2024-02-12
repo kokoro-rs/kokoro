@@ -4,7 +4,9 @@ use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 
 #[derive(DynamicPlugin)]
-struct MyPlugin;
+struct MyPlugin {
+    hello: &'static str,
+}
 impl Plugin for MyPlugin {
     fn apply(&self, ctx: &Context<Self>) {
         ctx.subscribe(sub);
@@ -16,9 +18,12 @@ impl Plugin for MyPlugin {
 }
 impl Default for MyPlugin {
     fn default() -> Self {
-        Self
+        Self {
+            hello: "Hello form plugin",
+        }
     }
 }
-fn sub(ctx: &Context<impl Plugin + 'static>) {
-    println!("Hello from plugin {}", ctx.name());
+fn sub(ctx: &Context<MyPlugin>) {
+    println!("{} {}", ctx.hello, ctx.name());
 }
+
