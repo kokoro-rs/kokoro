@@ -101,3 +101,15 @@ fn sub(ctx: &Context<impl Plugin + 'static>) {
     println!("Hello from plugin {}", ctx.name());
 }
 ```
+
+<br/>
+
+## todo list
+- [x] kokoro-default-impl
+  - [x] kokoro-plugin-impl
+  - [x] kokoro-thread-impl
+- [x] kokoro-dynamic-plugin-impl
+- [ ] kokoro-service-impl (AOP Support)
+- [ ] kokoro-plugin-loader (Hot-Reload Support)
+- [ ] kokoro-plugin-logger (Generic logging interface.)
+- [ ] kokoro-service-http (Http Service)
