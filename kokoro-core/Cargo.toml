@@ -3,6 +3,18 @@ name = "kokoro-core"
 version = "0.0.1"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-core"
+description = "Dynamic publish-subscribe pattern framework."
+keywords = [
+  "publish-subscribe",
+  "pub/sub",
+  "kokoro",
+  "aop",
+  "pattern",
+  "framework",
+  "fast",
+  "eventbus",
+  "pubsub",
+]
 
 [features]
 nightly = []
