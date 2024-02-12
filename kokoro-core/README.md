@@ -10,6 +10,8 @@
   
   Support for dynamic plug-ins and AOP
 
+  We hope to use Rust to build highly decoupled applications or servers that can be hot-reloaded.
+
   <h2>Not yet stable, do not use in production !!</h2>
 </div>
 
