@@ -24,7 +24,6 @@ pub trait DynamicPluginable<T: LocalCache> {
 impl<T: LocalCache + 'static> DynamicPluginable<T> for Context<T> {
     #[inline(always)]
     fn plugin_dynamic(&self, lib: Arc<Library>) -> Result<ScopeId, libloading::Error> {
-        let lib = Arc::new(lib);
         let create_fn = unsafe { lib.get::<CreateFn>(b"_create")? };
         let plugin = create_fn();
         let name: &'static str = plugin.dyn_name();
