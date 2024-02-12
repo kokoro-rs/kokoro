@@ -4,10 +4,12 @@
   Dynamic publish-subscribe pattern framework.
   
   Support for dynamic plug-ins and AOP
+
+  <h2>Not yet stable, do not use in production !!</h2>
 </div>
-
-## Not yet stable, do not use in production !!
-
+<br/>
+<br/>
+<br/>
 ## Simple publish/subscribe
 ```rust
 use std::fmt::Display;
@@ -43,6 +45,9 @@ fn sub_print(print: &Print) {
 }
 ```
 
+<br/>
+<br/>
+<br/>
 ## Plug-in system with dynamic capabilities
 **APP**
 ```rust
