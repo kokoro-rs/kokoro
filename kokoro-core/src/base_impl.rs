@@ -5,6 +5,7 @@ use crate::context::{
 use crate::mpsc;
 use parking_lot::Mutex;
 use std::sync::Arc;
+use std::thread;
 impl<T: Send + Sync> LocalCache for T {}
 /// The root's cache
 pub struct RootCache {
@@ -60,6 +61,9 @@ impl RunnableContext for Context<RootCache> {
 pub fn default_runner(ctx: &Context<RootCache>) {
     for e in ctx.receiver() {
         let ctx = ctx.with(ctx.scope());
-        std::thread::spawn(move || ctx.scope().trigger_recursive(Arc::clone(&e)));
+        thread::Builder::new()
+            .name("main loop thread".to_string())
+            .spawn(move || ctx.scope().trigger_recursive(Arc::clone(&e)))
+            .expect("main loop thread can not spawn");
     }
 }

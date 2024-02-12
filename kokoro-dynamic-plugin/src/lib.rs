@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+#![doc = "Provide Kokoro with the ability to dynamically load plugins"]
 use kokoro_core::context::{
     scope::{LocalCache, Scope, Triggerable},
     Context,
@@ -14,10 +16,13 @@ pub trait DynamicPlugin: LocalCache {
 }
 
 type CreateFn = fn() -> Arc<dyn DynamicPlugin>;
+/// Provide Context with the ability to dynamically load plugins
 pub trait DynamicPluginable<T: LocalCache> {
+    /// Dynamically loading plugins
     fn plugin_dynamic(&self, lib: Arc<Library>) -> Result<(), libloading::Error>;
 }
 impl<T: LocalCache + 'static> DynamicPluginable<T> for Context<T> {
+    #[inline(always)]
     fn plugin_dynamic(&self, lib: Arc<Library>) -> Result<(), libloading::Error> {
         let lib = Arc::new(lib);
         let create_fn = unsafe { lib.get::<CreateFn>(b"_create")? };

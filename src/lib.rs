@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
 pub use kokoro_core as core;
 /// Default export
 pub mod prelude {
@@ -14,11 +16,13 @@ pub mod prelude {
 }
 #[cfg(feature = "default-impl")]
 pub use kokoro_default_impl as default_impl;
+/// The macros
 #[cfg(feature = "macros")]
 pub mod macros {
     pub use kokoro_macros::stable_sorted_event;
     pub use kokoro_macros::Event;
 }
+/// Dynamic plug-in capabilities
 #[cfg(feature = "dynamic-plugin")]
 pub mod dynamic_plugin {
     pub use kokoro_dynamic_plugin::*;
