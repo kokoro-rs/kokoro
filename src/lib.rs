@@ -15,4 +15,12 @@ pub mod prelude {
 #[cfg(feature = "default-impl")]
 pub use kokoro_default_impl as default_impl;
 #[cfg(feature = "macros")]
-pub use kokoro_macros as macros;
+pub mod macros {
+    pub use kokoro_macros::stable_sorted_event;
+    pub use kokoro_macros::Event;
+}
+#[cfg(feature = "dynamic-plugin")]
+pub mod dynamic_plugin {
+    pub use kokoro_dynamic_plugin::*;
+    pub use kokoro_macros::DynamicPlugin;
+}

@@ -4,7 +4,8 @@ members = [
   "kokoro-default-impl",
   "kokoro-dynamic-plugin",
   "kokoro-macros",
-  "kokoro-dynamic-plugin",
+  "examples/dynamic-plugin",
+  "examples/dynamic-plugin/plugin-example"
 ]
 
 [package]
@@ -13,7 +14,7 @@ version = "0.0.7"
 edition = "2021"
 
 [features]
-default = ["macros", "default-impl"]
+default = ["macros", "default-impl", "dynamic-plugin"]
 nightly = ["kokoro-core/nightly"]
 macros = ["dep:kokoro-macros"]
 default-impl = ["dep:kokoro-default-impl"]

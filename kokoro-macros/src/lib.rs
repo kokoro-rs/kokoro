@@ -137,3 +137,30 @@ pub fn stable_sorted_event(attr: TokenStream, item: TokenStream) -> TokenStream 
     };
     TokenStream::from(expanded)
 }
+
+#[proc_macro_derive(DynamicPlugin)]
+pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+    let expanded = quote! {
+        impl kokoro::dynamic_plugin::DynamicPlugin for #name {
+            fn dyn_apply(&self, ctx: &Context<dyn scope::LocalCache>) {
+                let scope = ctx.scope();
+                self.apply(&ctx.with(Arc::clone(unsafe {
+                    &*(&scope as *const Arc<scope::Scope<dyn scope::LocalCache>>
+                        as *const Arc<scope::Scope<#name>>)
+                })));
+            }
+
+            fn dyn_name(&self) -> &'static str {
+                self.name()
+            }
+        }
+        #[no_mangle]
+        extern "Rust" fn _create()->Arc<dyn kokoro::dynamic_plugin::DynamicPlugin>{
+            std::sync::Arc::new(#name::default())
+        };
+    };
+    
+    TokenStream::from(expanded)
+}

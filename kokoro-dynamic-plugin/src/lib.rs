@@ -1,14 +1,42 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use kokoro_core::context::{
+    scope::{LocalCache, Scope, Triggerable},
+    Context,
+};
+pub use libloading;
+use libloading::Library;
+use std::sync::Arc;
+/// Dynamic Plugin needs to impl this trait
+pub trait DynamicPlugin: LocalCache {
+    /// Is executed when the plugin is applied
+    fn dyn_apply(&self, ctx: &Context<dyn LocalCache>);
+    /// Name of the plugin
+    fn dyn_name(&self) -> &'static str;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+type CreateFn = fn() -> Arc<dyn DynamicPlugin>;
+pub trait DynamicPluginable<T: LocalCache> {
+    fn plugin_dynamic(&self, lib: Arc<Library>) -> Result<(), libloading::Error>;
+}
+impl<T: LocalCache + 'static> DynamicPluginable<T> for Context<T> {
+    fn plugin_dynamic(&self, lib: Arc<Library>) -> Result<(), libloading::Error> {
+        let lib = Arc::new(lib);
+        let create_fn = unsafe { lib.get::<CreateFn>(b"_create")? };
+        let plugin = create_fn();
+        let name: &'static str = plugin.dyn_name();
+        let scope = Scope::create(
+            Arc::clone(unsafe {
+                &*(&plugin as *const Arc<dyn DynamicPlugin> as *const Arc<dyn LocalCache>)
+            }),
+            self,
+        );
+        self.scope().subscopes().insert(
+            self.scope().scope_id_gen.lock().next(name),
+            Arc::clone(&scope) as Arc<dyn Triggerable + Send + Sync + 'static>,
+        );
+        scope
+            .dyn_cache()
+            .insert("kokoro-dynamic-plugin/lib-cache", lib);
+        plugin.dyn_apply(&self.with(scope));
+        Ok(())
     }
 }
