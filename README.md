@@ -1,1 +1,1 @@
-./kokoro/README.md
+./kokoro-core/README.md
