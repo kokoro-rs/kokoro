@@ -5,7 +5,7 @@ members = [
   "kokoro-dynamic-plugin",
   "kokoro-macros",
   "examples/dynamic-plugin",
-  "examples/dynamic-plugin/plugin-example"
+  "examples/dynamic-plugin/plugin-example",
 ]
 
 [package]
@@ -13,6 +13,19 @@ name = "kokoro"
 version = "0.0.1"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro"
+description = "Dynamic publish-subscribe pattern framework. Support for dynamic plug-ins and AOP"
+keywords = [
+  "publish-subscribe",
+  "pub/sub",
+  "kokoro",
+  "aop",
+  "pattern",
+  "framework",
+  "fast",
+  "eventbus",
+  "pubsub",
+]
+license = "Apache-2.0/MIT"
 
 [features]
 default = ["macros", "default-impl", "dynamic-plugin"]

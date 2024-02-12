@@ -3,6 +3,20 @@ name = "kokoro-default-impl"
 version = "0.0.1"
 edition = "2021"
 repository =  "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-default-impl"
+description = "Kokoro's internal package, which implements some commonly used things"
+keywords = [
+  "publish-subscribe",
+  "pub/sub",
+  "kokoro",
+  "aop",
+  "pattern",
+  "framework",
+  "fast",
+  "eventbus",
+  "pubsub",
+]
+license = "Apache-2.0/MIT"
+
 
 [dependencies]
 parking_lot = "^0.12.1"

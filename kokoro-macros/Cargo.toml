@@ -3,6 +3,19 @@ name = "kokoro-macros"
 version = "0.0.1"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-macros"
+description = "Kokoro's internal package, which are used for auto derives"
+keywords = [
+  "publish-subscribe",
+  "pub/sub",
+  "kokoro",
+  "aop",
+  "pattern",
+  "framework",
+  "fast",
+  "eventbus",
+  "pubsub",
+]
+license = "Apache-2.0/MIT"
 
 [dependencies]
 proc-macro2 = "1.0.78"
