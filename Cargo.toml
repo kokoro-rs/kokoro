@@ -30,6 +30,8 @@ macros = ["dep:kokoro-macros"]
 default-impl = ["dep:kokoro-default-impl"]
 dynamic-plugin = ["dep:kokoro-dynamic-plugin"]
 
+[dependencies]
+
 [dependencies.kokoro-core]
 version = "0.0.1"
 path = "./kokoro-core"

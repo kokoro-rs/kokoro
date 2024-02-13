@@ -3,9 +3,6 @@ use crate::event::Event;
 use crate::schedule::Schedule;
 use dashmap::mapref::entry::Entry;
 use dashmap::DashMap;
-use parking_lot::Mutex;
-use rand::rngs::mock::StepRng;
-use rand::Rng;
 use rayon::prelude::*;
 use std::any::Any;
 use std::hash::Hash;
@@ -67,18 +64,16 @@ pub trait LocalCache: Send + Sync {}
 /// Used to cache the scope of the context
 pub struct Scope<T: LocalCache + ?Sized> {
     schedule: Arc<Schedule<T>>,
-    subscopes: Arc<DashMap<ScopeId, Arc<dyn Triggerable + Send + Sync>>>,
+    subscopes: DashMap<ScopeId, Arc<dyn Triggerable + Send + Sync>>,
     /// Cached content
     pub cache: Arc<T>,
     /// Dynamic storage content
     dyn_cache: DynamicCache,
     ctx: Option<Context<T>>,
-    /// Used to generate consecutive Scopeids that do not repeat
-    pub scope_id_gen: Mutex<ScopeIdGen<StepRng>>,
 }
 impl<T: LocalCache + ?Sized> Drop for Scope<T> {
     fn drop(&mut self) {
-        self.ctx.take();
+        drop(self.ctx.take());
     }
 }
 /// Can be triggered
@@ -127,11 +122,10 @@ impl<T: LocalCache + ?Sized + 'static> Scope<T> {
     pub fn create<N: LocalCache + 'static>(cache: Arc<T>, ctx: &Context<N>) -> Arc<Self> {
         let s = Arc::new(Self {
             schedule: Arc::new(Schedule::<T>::new()),
-            subscopes: Arc::new(DashMap::new()),
+            subscopes: DashMap::new(),
             cache,
             dyn_cache: DynamicCache::new(),
             ctx: None,
-            scope_id_gen: Mutex::new(ScopeIdGen::new(StepRng::new(0, 1))),
         });
         unsafe {
             let ctx_ptr = &s.ctx as *const Option<Context<T>>;
@@ -149,11 +143,10 @@ impl<T: LocalCache + ?Sized + 'static> Scope<T> {
     ) -> (Arc<Self>, Context<T>) {
         let s = Arc::new(Self {
             schedule: Arc::new(Schedule::<T>::new()),
-            subscopes: Arc::new(DashMap::new()),
+            subscopes: DashMap::new(),
             cache,
             dyn_cache: DynamicCache::new(),
             ctx: None,
-            scope_id_gen: Mutex::new(ScopeIdGen::new(StepRng::new(0, 1))),
         });
         let ctx = f(Arc::clone(&s));
         unsafe {
@@ -171,8 +164,8 @@ impl<T: LocalCache + ?Sized + 'static> Scope<T> {
     }
     /// Get the scope of children
     #[inline(always)]
-    pub fn subscopes(&self) -> Arc<DashMap<ScopeId, Arc<dyn Triggerable + Send + Sync>>> {
-        Arc::clone(&self.subscopes)
+    pub fn subscopes(&self) -> &DashMap<ScopeId, Arc<dyn Triggerable + Send + Sync>> {
+        &self.subscopes
     }
 }
 /// Used to mark the scope of the identifier
@@ -208,23 +201,5 @@ impl Clone for ScopeId {
             name: self.name,
             pre_id: self.pre_id,
         }
-    }
-}
-/// Used to generate consecutive Scopeids that do not repeat
-pub struct ScopeIdGen<R: Rng> {
-    rand: R,
-}
-impl<R: Rng> ScopeIdGen<R> {
-    #[inline(always)]
-    /// Iterate to get a new identifier
-    pub fn next(&mut self, name: &'static str) -> ScopeId {
-        let num = self.rand.next_u64();
-        ScopeId::new(name, num)
-    }
-}
-impl<R: Rng> ScopeIdGen<R> {
-    #[inline(always)]
-    fn new(rand: R) -> Self {
-        Self { rand }
     }
 }

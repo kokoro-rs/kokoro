@@ -147,7 +147,6 @@ dependencies = [
  "dashmap",
  "flume",
  "parking_lot",
- "rand",
  "rayon",
 ]
 
@@ -157,6 +156,7 @@ version = "0.0.1"
 dependencies = [
  "kokoro-core",
  "parking_lot",
+ "rand",
 ]
 
 [[package]]
@@ -166,6 +166,7 @@ dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
  "libloading",
+ "rand",
 ]
 
 [[package]]

@@ -15,6 +15,7 @@ license = "Apache-2.0/MIT"
 
 [dependencies]
 libloading = "^0.8.1"
+rand = "^0.8.5"
 [dependencies.kokoro-core]
 path = "../kokoro-core"
 version = "0.0.1"

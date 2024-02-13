@@ -4,6 +4,8 @@ use kokoro_core::context::{
     scope::{LocalCache, Scope, ScopeId, Triggerable},
     Context,
 };
+use rand::rngs::mock::StepRng;
+use kokoro_default_impl::plugin::ScopeIdGen;
 pub use libloading;
 use libloading::Library;
 use std::sync::Arc;
@@ -24,6 +26,12 @@ pub trait DynamicPluginable<T: LocalCache> {
 impl<T: LocalCache + 'static> DynamicPluginable<T> for Context<T> {
     #[inline(always)]
     fn plugin_dynamic(&self, lib: Arc<Library>) -> Result<ScopeId, libloading::Error> {
+        let scope_id_gen = self
+            .scope()
+            .dyn_cache()
+            .default("kokoro-plugin-impl/scope_id_gen", || {
+                Arc::new(ScopeIdGen::new(StepRng::new(0, 1)))
+            });
         let create_fn = unsafe { lib.get::<CreateFn>(b"_create")? };
         let plugin = create_fn();
         let name: &'static str = plugin.dyn_name();
@@ -33,7 +41,7 @@ impl<T: LocalCache + 'static> DynamicPluginable<T> for Context<T> {
             }),
             self,
         );
-        let id = self.scope().scope_id_gen.lock().next(name);
+        let id = scope_id_gen.next(name);
         self.scope().subscopes().insert(
             id.clone(),
             Arc::clone(&scope) as Arc<dyn Triggerable + Send + Sync + 'static>,
