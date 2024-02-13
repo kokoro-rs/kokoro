@@ -6,8 +6,8 @@ use dashmap::DashMap;
 use rayon::prelude::*;
 use std::any::Any;
 use std::hash::Hash;
+use std::mem::MaybeUninit;
 use std::ops::Deref;
-use std::ptr;
 use std::sync::Arc;
 
 /// Dynamic storage content
@@ -69,11 +69,11 @@ pub struct Scope<T: LocalCache + ?Sized> {
     pub cache: Arc<T>,
     /// Dynamic storage content
     dyn_cache: DynamicCache,
-    ctx: Option<Context<T>>,
+    ctx: MaybeUninit<Context<T>>,
 }
 impl<T: LocalCache + ?Sized> Drop for Scope<T> {
     fn drop(&mut self) {
-        drop(self.ctx.take());
+        let _ = std::mem::replace(&mut self.ctx, MaybeUninit::uninit());
     }
 }
 /// Can be triggered
@@ -90,11 +90,8 @@ unsafe impl<T: LocalCache + ?Sized> Sync for Scope<T> {}
 impl<T: LocalCache + ?Sized + 'static> Triggerable for Scope<T> {
     #[inline(always)]
     fn trigger(&self, e: Arc<dyn Event + Send + Sync>) {
-        if let Some(ctx) = &self.ctx {
-            self.schedule().trigger(e, ctx)
-        } else {
-            panic!("Where did your Context go?")
-        }
+        self.schedule()
+            .trigger(e, unsafe { self.ctx.assume_init_ref() })
     }
     #[inline(always)]
     fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>) {
@@ -125,13 +122,14 @@ impl<T: LocalCache + ?Sized + 'static> Scope<T> {
             subscopes: DashMap::new(),
             cache,
             dyn_cache: DynamicCache::new(),
-            ctx: None,
+            ctx: MaybeUninit::<Context<T>>::uninit(),
         });
         unsafe {
-            let ctx_ptr = &s.ctx as *const Option<Context<T>>;
+            let ctx_ptr = &s.ctx as *const MaybeUninit<Context<T>>;
+            let _ = std::ptr::read(ctx_ptr);
             #[allow(invalid_reference_casting)]
-            let ctx_ptr = &mut *(ctx_ptr as *mut Option<Context<T>>);
-            ptr::write(ctx_ptr, Some(ctx.with(Arc::clone(&s))));
+            let ctx_mut = &mut *(ctx_ptr as *mut MaybeUninit<Context<T>>);
+            ctx_mut.write(ctx.with(Arc::downgrade(&s)));
         }
         s
     }
@@ -146,14 +144,15 @@ impl<T: LocalCache + ?Sized + 'static> Scope<T> {
             subscopes: DashMap::new(),
             cache,
             dyn_cache: DynamicCache::new(),
-            ctx: None,
+            ctx: MaybeUninit::<Context<T>>::uninit(),
         });
         let ctx = f(Arc::clone(&s));
         unsafe {
-            let ctx_ptr = &s.ctx as *const Option<Context<T>>;
+            let ctx_ptr = &s.ctx as *const MaybeUninit<Context<T>>;
+            let _ = std::ptr::read(ctx_ptr);
             #[allow(invalid_reference_casting)]
-            let ctx_ptr = &mut *(ctx_ptr as *mut Option<Context<T>>);
-            ptr::write(ctx_ptr, Some(ctx.with(Arc::clone(&s))));
+            let ctx_mut = &mut *(ctx_ptr as *mut MaybeUninit<Context<T>>);
+            ctx_mut.write(ctx.with(Arc::downgrade(&s)));
         }
         (s, ctx)
     }

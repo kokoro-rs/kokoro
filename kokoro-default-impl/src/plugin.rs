@@ -28,6 +28,8 @@ impl<T: LocalCache + 'static, P: Plugin + 'static> Pluginable<P> for Context<T> 
     fn plugin(&self, plugin: P) -> ScopeId {
         let scope_id_gen = self
             .scope()
+            .upgrade()
+            .unwrap()
             .dyn_cache()
             .default("kokoro-plugin-impl/scope_id_gen", || {
                 Arc::new(ScopeIdGen::new(StepRng::new(0, 1)))
@@ -36,18 +38,18 @@ impl<T: LocalCache + 'static, P: Plugin + 'static> Pluginable<P> for Context<T> 
         let plugin = Arc::new(plugin);
         let scope = Scope::create(Arc::clone(&plugin), self);
         let id = scope_id_gen.next(name);
-        self.scope().subscopes().insert(
+        plugin.apply(&self.with(Arc::downgrade(&scope)));
+        self.scope().upgrade().unwrap().subscopes().insert(
             id.clone(),
-            Arc::clone(&scope) as Arc<dyn Triggerable + Send + Sync + 'static>,
+            scope as Arc<dyn Triggerable + Send + Sync + 'static>,
         );
-        plugin.apply(&self.with(scope));
         id
     }
 }
 impl<T: LocalCache + 'static> Unpluginable for Context<T> {
     #[inline(always)]
     fn unplugin(&self, id: ScopeId) {
-        self.scope().subscopes().remove(&id);
+        self.scope().upgrade().unwrap().subscopes().remove(&id);
     }
 }
 /// Used to generate consecutive Scopeids that do not repeat

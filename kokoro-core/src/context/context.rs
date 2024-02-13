@@ -3,14 +3,15 @@ use crate::disposable::DisposableHandle;
 use crate::event::Event;
 use crate::schedule::{Schedule, WithNoneList, AROBS};
 use crate::subscriber::Subscriber;
+use either::*;
 use flume::{Receiver, Sender};
 use std::ops::Deref;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 type SSE = dyn Event + Send + Sync;
 /// The heart of Kokoro
 pub struct Context<T: LocalCache + ?Sized> {
-    scope: Arc<Scope<T>>,
+    scope: Either<Weak<Scope<T>>, Arc<Scope<T>>>,
     receiver: Receiver<Arc<SSE>>,
     sender: Sender<Arc<SSE>>,
 }
@@ -21,19 +22,22 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
         Self {
             receiver: mpsc.1,
             sender: mpsc.0,
-            scope,
+            scope: Right(scope),
         }
     }
     /// Get the scope of the Context
     #[inline]
-    pub fn scope(&self) -> Arc<Scope<T>> {
-        Arc::clone(&self.scope)
+    pub fn scope(&self) -> Weak<Scope<T>> {
+        match &self.scope {
+            Left(s) => Weak::clone(&s),
+            Right(s) => Arc::downgrade(&s),
+        }
     }
     /// Place the current context in a new scope
     #[inline]
-    pub fn with<N: LocalCache + ?Sized>(&self, scope: Arc<Scope<N>>) -> Context<N> {
+    pub fn with<N: LocalCache + ?Sized>(&self, scope: Weak<Scope<N>>) -> Context<N> {
         Context {
-            scope,
+            scope: Left(scope),
             receiver: self.receiver.clone(),
             sender: self.sender.clone(),
         }
@@ -43,7 +47,7 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
     /// Note: It is not a get-schedule that includes the parent node
     #[inline]
     pub fn schedule(&self) -> Arc<Schedule<T>> {
-        self.scope().schedule()
+        self.scope().upgrade().unwrap().schedule()
     }
     /// Publish an event to the main channel
     #[inline]
@@ -64,18 +68,16 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
         DisposableHandle::new(self.schedule().insert(sub))
     }
     /// Get a consumer of the primary channel
-    /// 
+    ///
     /// Note: An event is consumed only once, even if multiple consumers cannot process the same event
     #[inline]
     pub fn receiver(&self) -> Receiver<Arc<SSE>> {
         self.receiver.clone()
     }
 }
-
-impl<T: LocalCache + 'static> Deref for Context<T> {
-    type Target = T;
+/* impl<T: LocalCache + 'static> Deref for Context<T> {
+    type Target = Weak<T>;
 
     fn deref(&self) -> &Self::Target {
-        self.scope.as_ref().cache.as_ref()
     }
-}
+}*/

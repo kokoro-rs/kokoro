@@ -4,7 +4,7 @@ use crate::context::{
 };
 use crate::mpsc;
 use parking_lot::Mutex;
-use std::sync::Arc;
+use std::{sync::{Arc, Weak}, ops::Deref};
 use std::thread;
 impl<T: Send + Sync> LocalCache for T {}
 /// The root's cache
@@ -37,7 +37,7 @@ impl Default for RootCache {
 impl Default for Context<RootCache> {
     #[inline(always)]
     fn default() -> Self {
-        Scope::build(Arc::new(RootCache::default()), |s| Context::new(s, mpsc())).1
+        Scope::build(Arc::new(RootCache::default()), |s| Context::new(Arc::clone(&s), mpsc())).1
     }
 }
 /// That can be run by a runner
@@ -50,11 +50,11 @@ pub trait RunnableContext {
 impl RunnableContext for Context<RootCache> {
     #[inline(always)]
     fn runner<F: FnMut(&Context<RootCache>) + 'static>(&self, runner: F) {
-        self.scope().cache.runner.lock().0 = Box::new(runner);
+        self.scope().upgrade().unwrap().cache.runner.lock().0 = Box::new(runner);
     }
     #[inline(always)]
     fn run(&self) {
-        self.scope().cache.runner.lock().0(self);
+        self.scope().upgrade().unwrap().cache.runner.lock().0(self);
     }
 }
 /// The default runner
@@ -63,7 +63,7 @@ pub fn default_runner(ctx: &Context<RootCache>) {
         let ctx = ctx.with(ctx.scope());
         thread::Builder::new()
             .name("main loop thread".to_string())
-            .spawn(move || ctx.scope().trigger_recursive(Arc::clone(&e)))
+            .spawn(move || ctx.scope().upgrade().unwrap().trigger_recursive(Arc::clone(&e)))
             .expect("main loop thread can not spawn");
     }
 }
