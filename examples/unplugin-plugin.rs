@@ -13,12 +13,9 @@ fn main() {
 
 struct Test;
 impl Plugin for Test {
-    fn apply(&self, ctx: &Context<Self>) {
+    const NAME: &'static str = "test";
+    fn apply(ctx: Context<Self>) {
         ctx.subscribe(sub);
-    }
-
-    fn name(&self) -> &'static str {
-        "test"
     }
 }
 fn sub() {

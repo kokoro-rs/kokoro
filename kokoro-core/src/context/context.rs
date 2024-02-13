@@ -3,17 +3,19 @@ use crate::disposable::DisposableHandle;
 use crate::event::Event;
 use crate::schedule::{Schedule, WithNoneList, AROBS};
 use crate::subscriber::Subscriber;
-use either::*;
 use flume::{Receiver, Sender};
-use std::sync::{Arc, Weak};
+use std::ops::Deref;
+use std::sync::Arc;
 
 type SSE = dyn Event + Send + Sync;
+
 /// The heart of Kokoro
 pub struct Context<T: LocalCache + ?Sized> {
-    scope: Either<Weak<Scope<T>>, Arc<Scope<T>>>,
+    scope: Arc<Scope<T>>,
     receiver: Receiver<Arc<SSE>>,
     sender: Sender<Arc<SSE>>,
 }
+
 impl<T: LocalCache + ?Sized + 'static> Context<T> {
     /// Create a new Context
     #[inline(always)]
@@ -21,22 +23,19 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
         Self {
             receiver: mpsc.1,
             sender: mpsc.0,
-            scope: Right(scope),
+            scope,
         }
     }
     /// Get the scope of the Context
     #[inline(always)]
-    pub fn scope(&self) -> Weak<Scope<T>> {
-        match &self.scope {
-            Left(s) => Weak::clone(&s),
-            Right(s) => Arc::downgrade(&s),
-        }
+    pub fn scope(&self) -> Arc<Scope<T>> {
+        Arc::clone(&self.scope)
     }
     /// Place the current context in a new scope
     #[inline(always)]
-    pub fn with<N: LocalCache + ?Sized>(&self, scope: Weak<Scope<N>>) -> Context<N> {
+    pub fn with<N: LocalCache + ?Sized>(&self, scope: Arc<Scope<N>>) -> Context<N> {
         Context {
-            scope: Left(scope),
+            scope: scope,
             receiver: self.receiver.clone(),
             sender: self.sender.clone(),
         }
@@ -46,7 +45,7 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
     /// Note: It is not a get-schedule that includes the parent node
     #[inline(always)]
     pub fn schedule(&self) -> Arc<Schedule<T>> {
-        self.scope().upgrade().unwrap().schedule()
+        self.scope().schedule()
     }
     /// Publish an event to the main channel
     #[inline(always)]
@@ -73,15 +72,11 @@ impl<T: LocalCache + ?Sized + 'static> Context<T> {
     pub fn receiver(&self) -> Receiver<Arc<SSE>> {
         self.receiver.clone()
     }
-    /// Get the cache from Context.scope
-    #[inline(always)]
-    pub fn cache(&self)->Option<Arc<T>>{
-        Some(Arc::clone(&self.scope().upgrade()?.cache))
-    }
 }
-/* impl<T: LocalCache + 'static> Deref for Context<T> {
-    type Target = Weak<T>;
+impl<T: LocalCache + 'static> Deref for Context<T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
+        self.scope.as_ref().cache.as_ref()
     }
-}*/
+}

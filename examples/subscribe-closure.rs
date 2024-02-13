@@ -1,6 +1,7 @@
 use kokoro::{core::context::scope::Triggerable, prelude::*};
 use std::sync::atomic::{AtomicI32, Ordering::Relaxed};
 use std::sync::Arc;
+use kokoro_core::context::scope::LocalCache;
 
 fn main() {
     static I: AtomicI32 = AtomicI32::new(0);
@@ -21,10 +22,12 @@ fn main() {
      *  3
      */
 }
+
 #[derive(Event)]
 struct Print;
 
 fn custom_runner(ctx: &Context<RootCache>) {
-    ctx.scope().upgrade().unwrap().trigger_recursive(Arc::new(PhantomEvent));
-    ctx.scope().upgrade().unwrap().trigger_recursive(Arc::new(Print));
+    let ctx_dyn = unsafe { &*(ctx as *const Context<RootCache> as *const Context<dyn LocalCache>) };
+    ctx.scope().trigger_recursive(Arc::new(PhantomEvent),ctx_dyn);
+    ctx.scope().trigger_recursive(Arc::new(Print),ctx_dyn);
 }

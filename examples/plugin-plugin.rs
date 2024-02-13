@@ -12,32 +12,28 @@ fn main() {
      */
 }
 
+trait Eat {
+    fn what(&self) -> &'static str;
+}
 struct PF;
 impl Plugin for PF {
-    fn apply(&self, ctx: &Context<Self>) {
+    const NAME: &'static str = "PF";
+    fn apply(ctx: Context<Self>) {
         ctx.plugin(SF);
         ctx.subscribe(sub);
         println!("Hello PF");
-    }
-
-    fn name(&self) -> &'static str {
-        "PF"
     }
 }
 
 struct SF;
 impl Plugin for SF {
-    fn apply(&self, ctx: &Context<Self>) {
+    const NAME: &'static str = "SF";
+    fn apply(ctx: Context<Self>) {
         ctx.subscribe(sub);
         println!("Hello SF");
     }
-
-    fn name(&self) -> &'static str {
-        "SF"
-    }
 }
 
-fn sub(ctx: &Context<impl Plugin + 'static>) {
-    println!("From: {}", ctx.cache().unwrap().name());
-    println!("From: {}", ctx.cache().unwrap().name());
+fn sub<P: Plugin + 'static>(_ctx: &Context<P>) {
+    println!("From: {}", P::NAME);
 }

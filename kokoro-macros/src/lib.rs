@@ -143,25 +143,19 @@ pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
     let expanded = quote! {
-        impl kokoro::dynamic_plugin::DynamicPlugin for #name {
-            fn dyn_apply(&self, ctx: &Context<dyn scope::LocalCache>) {
-                let scope = ctx.scope();
-                self.apply(&ctx.with(std::sync::Weak::clone(unsafe {
-                    &*(&scope as *const std::sync::Weak<scope::Scope<dyn scope::LocalCache>>
-                        as *const std::sync::Weak<scope::Scope<Self>>)
-                })));
-            }
-
-            fn dyn_name(&self) -> &'static str {
-                self.name()
-            }
+        #[no_mangle]
+        fn __plugin_create() -> ::std::boxed::Box<dyn ::kokoro::core::context::scope::LocalCache> {
+            ::std::boxed::Box::new(#name::default())
         }
         #[no_mangle]
-        fn _create() -> std::sync::Arc<dyn kokoro::dynamic_plugin::DynamicPlugin> {
-            std::sync::Arc::new(#name::default())
+        fn __plugin_name() -> &'static str {
+            #name::NAME
+        }
+        #[no_mangle]
+        fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::LocalCache>) {
+            #name::apply(unsafe{ ::std::mem::transmute(ctx) });
         }
     };
 
     TokenStream::from(expanded)
 }
-

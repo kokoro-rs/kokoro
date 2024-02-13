@@ -6,7 +6,6 @@ use dashmap::DashMap;
 use rayon::prelude::*;
 use std::any::Any;
 use std::hash::Hash;
-use std::mem::MaybeUninit;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -64,97 +63,59 @@ pub trait LocalCache: Send + Sync {}
 /// Used to cache the scope of the context
 pub struct Scope<T: LocalCache + ?Sized> {
     schedule: Arc<Schedule<T>>,
-    subscopes: DashMap<ScopeId, Arc<dyn Triggerable + Send + Sync>>,
+    subscopes: DashMap<ScopeId, Box<dyn Triggerable + Send + Sync>>,
     /// Cached content
-    pub cache: Arc<T>,
+    pub cache: Box<T>,
     /// Dynamic storage content
     dyn_cache: DynamicCache,
-    ctx: MaybeUninit<Context<T>>,
 }
-impl<T: LocalCache + ?Sized> Drop for Scope<T> {
-    fn drop(&mut self) {
-        let _ = std::mem::replace(&mut self.ctx, MaybeUninit::uninit());
-    }
-}
+
 /// Can be triggered
 pub trait Triggerable {
     /// All the subscribers triggered the current scope
-    fn trigger(&self, e: Arc<dyn Event + Send + Sync>);
+    fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>);
     /// Recursively triggers all subscribers of the current scope and descendant scope
-    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>);
+    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>);
 }
 impl LocalCache for dyn Triggerable + Send + Sync {}
 
 unsafe impl<T: LocalCache + ?Sized> Send for Scope<T> {}
 unsafe impl<T: LocalCache + ?Sized> Sync for Scope<T> {}
-impl<T: LocalCache + ?Sized + 'static> Triggerable for Scope<T> {
+impl<T: LocalCache + ?Sized + 'static> Triggerable for Arc<Scope<T>> {
     #[inline(always)]
-    fn trigger(&self, e: Arc<dyn Event + Send + Sync>) {
-        self.schedule()
-            .trigger(e, unsafe { self.ctx.assume_init_ref() })
+    fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>) {
+        self.schedule().trigger(e, &ctx.with(Arc::clone(&self)));
     }
     #[inline(always)]
-    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>) {
+    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>) {
         let ps = self.subscopes();
         ps.par_iter().for_each(|p| {
             let e = Arc::clone(&e);
-            p.trigger_recursive(e);
+            p.trigger_recursive(e, ctx);
         });
-        self.trigger(e);
+        self.trigger(e, ctx);
     }
 }
 impl<T: LocalCache + ?Sized + 'static> Scope<T> {
     /// Fetching cache
     #[inline(always)]
-    pub fn cache(&self) -> Arc<T> {
-        Arc::clone(&self.cache)
+    pub fn cache(&self) -> &T {
+        self.cache.as_ref()
     }
     /// Fetching dyn cache
     #[inline(always)]
     pub fn dyn_cache(&self) -> &DynamicCache {
         &self.dyn_cache
     }
-    /// If you already have a context, use the create function to create a range
+    /// Create a Scope
     #[inline(always)]
-    pub fn create<N: LocalCache + 'static>(cache: Arc<T>, ctx: &Context<N>) -> Arc<Self> {
-        let s = Arc::new(Self {
+    pub fn create(cache: Box<T>) -> Self {
+        Self {
             schedule: Arc::new(Schedule::<T>::new()),
             subscopes: DashMap::new(),
             cache,
             dyn_cache: DynamicCache::new(),
-            ctx: MaybeUninit::<Context<T>>::uninit(),
-        });
-        unsafe {
-            let ctx_ptr = &s.ctx as *const MaybeUninit<Context<T>>;
-            let _ = std::ptr::read(ctx_ptr);
-            #[allow(invalid_reference_casting)]
-            let ctx_mut = &mut *(ctx_ptr as *mut MaybeUninit<Context<T>>);
-            ctx_mut.write(ctx.with(Arc::downgrade(&s)));
         }
-        s
-    }
-    /// If you don't have a context, use the builder function to create the context and scope
-    #[inline(always)]
-    pub fn build<F: FnOnce(Arc<Self>) -> Context<T>>(
-        cache: Arc<T>,
-        f: F,
-    ) -> (Arc<Self>, Context<T>) {
-        let s = Arc::new(Self {
-            schedule: Arc::new(Schedule::<T>::new()),
-            subscopes: DashMap::new(),
-            cache,
-            dyn_cache: DynamicCache::new(),
-            ctx: MaybeUninit::<Context<T>>::uninit(),
-        });
-        let ctx = f(Arc::clone(&s));
-        unsafe {
-            let ctx_ptr = &s.ctx as *const MaybeUninit<Context<T>>;
-            let _ = std::ptr::read(ctx_ptr);
-            #[allow(invalid_reference_casting)]
-            let ctx_mut = &mut *(ctx_ptr as *mut MaybeUninit<Context<T>>);
-            ctx_mut.write(ctx.with(Arc::downgrade(&s)));
-        }
-        (s, ctx)
     }
     /// Gets the schedule for the current scope
     #[inline(always)]
@@ -163,7 +124,7 @@ impl<T: LocalCache + ?Sized + 'static> Scope<T> {
     }
     /// Get the scope of children
     #[inline(always)]
-    pub fn subscopes(&self) -> &DashMap<ScopeId, Arc<dyn Triggerable + Send + Sync>> {
+    pub fn subscopes(&self) -> &DashMap<ScopeId, Box<dyn Triggerable + Send + Sync>> {
         &self.subscopes
     }
 }

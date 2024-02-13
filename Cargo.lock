@@ -145,7 +145,6 @@ name = "kokoro-core"
 version = "0.0.2"
 dependencies = [
  "dashmap",
- "either",
  "flume",
  "parking_lot",
  "rayon",

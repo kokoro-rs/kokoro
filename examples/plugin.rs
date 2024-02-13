@@ -1,6 +1,4 @@
-use kokoro_default_impl::plugin::*;
 use kokoro::prelude::*;
-
 fn main() {
     let ctx = Context::default();
     ctx.plugin(P {
@@ -19,24 +17,20 @@ struct P {
     message: String,
 }
 impl Plugin for P {
-    fn apply(&self, ctx: &Context<Self>) {
+    const NAME: &'static str = "P";
+    fn apply(ctx: Context<Self>) {
         ctx.subscribe(sub);
-    }
-    fn name(&self) -> &'static str {
-        "P"
     }
 }
 fn sub(ctx: &Context<P>) {
-    println!("{}", ctx.cache().unwrap().content);
-    println!("{}", ctx.cache().unwrap().message);
+    println!("{}", ctx.content);
+    println!("{}", ctx.message);
 }
 
 struct N;
 impl Plugin for N {
-    fn apply(&self, ctx: &Context<Self>) {
+    const NAME: &'static str = "N";
+    fn apply(ctx: Context<Self>) {
         ctx.publish(PhantomEvent);
-    }
-    fn name(&self) -> &'static str {
-        "N"
     }
 }
