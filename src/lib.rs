@@ -3,6 +3,10 @@
 pub use kokoro_core as core;
 /// Default export
 pub mod prelude {
+    #[cfg(feature = "dynamic-plugin")]
+    pub use super::dynamic_plugin::*;
+    #[cfg(feature = "macros")]
+    pub use super::macros::*;
     pub use kokoro_core::base_impl::*;
     pub use kokoro_core::context::*;
     pub use kokoro_core::disposable::*;
@@ -11,8 +15,6 @@ pub mod prelude {
     pub use kokoro_core::subscriber::*;
     #[cfg(feature = "default-impl")]
     pub use kokoro_default_impl::{plugin::*, thread::*};
-    #[cfg(feature = "macros")]
-    pub use kokoro_macros::*;
 }
 #[cfg(feature = "default-impl")]
 pub use kokoro_default_impl as default_impl;
@@ -20,11 +22,12 @@ pub use kokoro_default_impl as default_impl;
 #[cfg(feature = "macros")]
 pub mod macros {
     pub use kokoro_macros::stable_sorted_event;
+    #[cfg(feature = "dynamic-plugin")]
+    pub use kokoro_macros::DynamicPlugin;
     pub use kokoro_macros::Event;
 }
 /// Dynamic plug-in capabilities
 #[cfg(feature = "dynamic-plugin")]
 pub mod dynamic_plugin {
     pub use kokoro_dynamic_plugin::*;
-    pub use kokoro_macros::DynamicPlugin;
 }
