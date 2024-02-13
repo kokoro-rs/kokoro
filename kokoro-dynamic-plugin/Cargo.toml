@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-dynamic-plugin"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-dynamic-plugin"
 description = "Kokoro's internal package, which implements dynamic plug-in"
@@ -18,7 +18,7 @@ libloading = "^0.8.1"
 rand = "^0.8.5"
 [dependencies.kokoro-core]
 path = "../kokoro-core"
-version = "^0.0.2"
+version = "^0.0.3"
 [dependencies.kokoro-default-impl]
 path = "../kokoro-default-impl"
-version = "^0.0.2"
+version = "^0.0.3"

@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-core"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-core"
 description = "Dynamic publish-subscribe pattern framework."
