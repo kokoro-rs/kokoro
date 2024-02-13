@@ -38,5 +38,6 @@ impl Plugin for SF {
 }
 
 fn sub(ctx: &Context<impl Plugin + 'static>) {
-    println!("From: {}", ctx.name());
+    println!("From: {}", ctx.cache().unwrap().name());
+    println!("From: {}", ctx.cache().unwrap().name());
 }

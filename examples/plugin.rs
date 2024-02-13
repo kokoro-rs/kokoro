@@ -27,8 +27,8 @@ impl Plugin for P {
     }
 }
 fn sub(ctx: &Context<P>) {
-    println!("{}", ctx.content);
-    println!("{}", ctx.message);
+    println!("{}", ctx.cache().unwrap().content);
+    println!("{}", ctx.cache().unwrap().message);
 }
 
 struct N;

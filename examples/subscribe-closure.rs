@@ -25,6 +25,6 @@ fn main() {
 struct Print;
 
 fn custom_runner(ctx: &Context<RootCache>) {
-    ctx.scope().trigger_recursive(Arc::new(PhantomEvent));
-    ctx.scope().trigger_recursive(Arc::new(Print));
+    ctx.scope().upgrade().unwrap().trigger_recursive(Arc::new(PhantomEvent));
+    ctx.scope().upgrade().unwrap().trigger_recursive(Arc::new(Print));
 }

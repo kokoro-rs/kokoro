@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 
@@ -7,6 +5,7 @@ use kokoro::prelude::*;
 struct MyPlugin {
     hello: &'static str,
 }
+
 impl Plugin for MyPlugin {
     fn apply(&self, ctx: &Context<Self>) {
         ctx.subscribe(sub);
@@ -24,6 +23,9 @@ impl Default for MyPlugin {
     }
 }
 fn sub(ctx: &Context<MyPlugin>) {
-    println!("{} {}", ctx.hello, ctx.name());
+    println!(
+        "{} {}",
+        ctx.cache().unwrap().hello,
+        ctx.cache().unwrap().name()
+    );
 }
-

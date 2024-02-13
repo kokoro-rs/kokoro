@@ -146,9 +146,9 @@ pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
         impl kokoro::dynamic_plugin::DynamicPlugin for #name {
             fn dyn_apply(&self, ctx: &Context<dyn scope::LocalCache>) {
                 let scope = ctx.scope();
-                self.apply(&ctx.with(Arc::clone(unsafe {
-                    &*(&scope as *const Arc<scope::Scope<dyn scope::LocalCache>>
-                        as *const Arc<scope::Scope<#name>>)
+                self.apply(&ctx.with(std::sync::Weak::clone(unsafe {
+                    &*(&scope as *const std::sync::Weak<scope::Scope<dyn scope::LocalCache>>
+                        as *const std::sync::Weak<scope::Scope<Self>>)
                 })));
             }
 
@@ -157,10 +157,11 @@ pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
             }
         }
         #[no_mangle]
-        extern "Rust" fn _create()->Arc<dyn kokoro::dynamic_plugin::DynamicPlugin>{
+        fn _create() -> std::sync::Arc<dyn kokoro::dynamic_plugin::DynamicPlugin> {
             std::sync::Arc::new(#name::default())
-        };
+        }
     };
-    
+
     TokenStream::from(expanded)
 }
+
