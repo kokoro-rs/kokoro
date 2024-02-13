@@ -1,4 +1,3 @@
-use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 
 #[derive(DynamicPlugin)]

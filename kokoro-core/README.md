@@ -76,24 +76,20 @@ fn main() {
 
 **Plugin (Dynamic link library)**
 ```rust
-use std::sync::Arc;
-
-use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 
 #[derive(DynamicPlugin)]
 struct MyPlugin {
     hello: &'static str,
 }
+
 impl Plugin for MyPlugin {
-    fn apply(&self, ctx: &Context<Self>) {
+    const NAME: &'static str = "plugin-example";
+    fn apply(ctx: Context<Self>) {
         ctx.subscribe(sub);
     }
-
-    fn name(&self) -> &'static str {
-        "plugin-example"
-    }
 }
+
 impl Default for MyPlugin {
     fn default() -> Self {
         Self {
@@ -101,8 +97,13 @@ impl Default for MyPlugin {
         }
     }
 }
+
 fn sub(ctx: &Context<MyPlugin>) {
-    println!("{} {}", ctx.hello, ctx.name());
+    println!(
+        "{} {}",
+        ctx.hello,
+        MyPlugin::NAME
+    );
 }
 ```
 
