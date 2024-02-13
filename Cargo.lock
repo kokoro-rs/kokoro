@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-core"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "dashmap",
  "either",
@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-default-impl"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "kokoro-core",
  "parking_lot",
@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-dynamic-plugin"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-macros"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "proc-macro2",
  "quote",

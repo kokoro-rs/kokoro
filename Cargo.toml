@@ -10,7 +10,7 @@ members = [
 
 [package]
 name = "kokoro"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro"
 description = "Dynamic publish-subscribe pattern framework. Support for dynamic plug-ins and AOP"
@@ -33,20 +33,20 @@ dynamic-plugin = ["dep:kokoro-dynamic-plugin"]
 [dependencies]
 
 [dependencies.kokoro-core]
-version = "0.0.1"
+version = "0.0.2"
 path = "./kokoro-core"
 
 [dependencies.kokoro-default-impl]
-version = "0.0.1"
+version = "0.0.2"
 path = "./kokoro-default-impl"
 optional = true
 
 [dependencies.kokoro-macros]
-version = "0.0.1"
+version = "0.0.2"
 path = "./kokoro-macros"
 optional = true
 
 [dependencies.kokoro-dynamic-plugin]
-version = "0.0.1"
+version = "0.0.2"
 path = "./kokoro-dynamic-plugin"
 optional = true

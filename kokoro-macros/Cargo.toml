@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-macros"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-macros"
 description = "Kokoro's internal package, which are used for auto derives"
@@ -14,9 +14,9 @@ keywords = [
 license = "Apache-2.0/MIT"
 
 [dependencies]
-proc-macro2 = "1.0.78"
-quote = "1.0.35"
-syn = "2.0.48"
+proc-macro2 = "^1.0.78"
+quote = "^1.0.35"
+syn = "^2.0.48"
 
 [lib]
 proc-macro = true
