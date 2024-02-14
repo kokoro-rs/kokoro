@@ -2,7 +2,7 @@ use kokoro::prelude::*;
 use std::fmt::Display;
 use std::thread::Builder;
 fn main() {
-    let ctx = Context::default();
+    let ctx = mpsc_context();
     ctx.subscribe(sub0);
     ctx.subscribe(sub1);
     ctx.subscribe(sub2);

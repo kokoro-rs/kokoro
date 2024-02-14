@@ -17,7 +17,7 @@ impl<D: Disposable> Disposable for DisposableHandle<D> {
         self.0.dispose()
     }
 }
-pub fn dispose<D: Disposable>(disposable: impl Disposable) {
+pub fn dispose<D: Disposable>(disposable: D) {
     disposable.dispose()
 }
 #[cfg(feature = "nightly")]

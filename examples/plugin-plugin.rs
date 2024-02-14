@@ -1,6 +1,6 @@
 use kokoro::prelude::*;
 fn main() {
-    let ctx = Context::default();
+    let ctx = mpsc_context();
     ctx.plugin(PF);
     ctx.publish(PhantomEvent);
     ctx.run();
@@ -13,9 +13,9 @@ fn main() {
 }
 
 struct PF;
-impl Plugin for PF {
+impl Plugin<MPSC> for PF {
     const NAME: &'static str = "PF";
-    fn apply(&self, ctx: &Context<Self>) {
+    fn apply(ctx: Context<Self, MPSC>) {
         ctx.plugin(SF);
         ctx.subscribe(sub);
         println!("Hello PF");
@@ -23,15 +23,14 @@ impl Plugin for PF {
 }
 
 struct SF;
-impl Plugin for SF {
+impl Plugin<MPSC> for SF {
     const NAME: &'static str = "SF";
-    fn apply(&self, ctx: &Context<Self>) {
+    fn apply(ctx: Context<Self, MPSC>) {
         ctx.subscribe(sub);
         println!("Hello SF");
     }
 }
 
-fn sub(ctx: &Context<impl Plugin + 'static>) {
-    println!("From: {}", ctx.name());
-    println!("From: {}", ctx.scope().cache().name());
+fn sub<P: Plugin<MPSC>>(_ctx: &Context<P, MPSC>) {
+    println!("From: {}", P::NAME);
 }

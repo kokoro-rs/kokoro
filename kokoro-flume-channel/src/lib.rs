@@ -1,11 +1,11 @@
+use flume::{unbounded, Receiver, Sender};
+use kokoro_core::base_impl::{Root, SSE};
+use kokoro_core::context::scope::{Resource, Scope, Triggerable};
+use kokoro_core::context::Context;
+use kokoro_core::event::Event;
+use parking_lot::Mutex;
 use std::sync::Arc;
 use std::thread;
-use flume::{Sender, Receiver, unbounded};
-use kokoro_core::base_impl::{Root, SSE};
-use parking_lot::Mutex;
-use kokoro_core::context::Context;
-use kokoro_core::context::scope::{Resource, Triggerable};
-use kokoro_core::event::Event;
 
 pub struct MPSC {
     sender: Sender<Arc<SSE>>,
@@ -37,13 +37,12 @@ impl RunnerCache {
     /// Wrap a runner
     #[inline(always)]
     pub fn new<F>(runner: F) -> Self
-        where
-            F: FnMut(&Context<Root, MPSC>) + 'static,
+    where
+        F: FnMut(&Context<Root, MPSC>) + 'static,
     {
         Self(Box::new(runner))
     }
 }
-
 
 /// That can be run by a runner
 pub trait Runnable {
@@ -83,8 +82,19 @@ pub trait Publishable<E> {
     fn publish(&self, e: E);
 }
 
-impl<T: Resource + ?Sized + 'static, E: Event + Send + Sync + 'static> Publishable<E> for Context<T, MPSC> {
+impl<T: Resource + ?Sized + 'static, E: Event + Send + Sync + 'static> Publishable<E>
+    for Context<T, MPSC>
+{
     fn publish(&self, e: E) {
-        self.global().sender.send(Arc::new(e)).expect("can not publish");
+        self.global()
+            .sender
+            .send(Arc::new(e))
+            .expect("can not publish");
     }
+}
+pub fn mpsc_context() -> Context<Root, MPSC> {
+    let scope = Scope::create(Box::new(Root::default()));
+    let mode = MPSC::default();
+    let ctx = Context::create(Arc::new(scope), Arc::new(mode));
+    ctx
 }

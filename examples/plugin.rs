@@ -1,11 +1,7 @@
-use std::sync::Arc;
 use kokoro::prelude::*;
-use kokoro_core::context::scope::Scope;
 
 fn main() {
-    let scope = Scope::create(Box::new(Root::default()));
-    let mode = MPSC::default();
-    let ctx = Context::create(Arc::new(scope), Arc::new(mode));
+    let ctx = mpsc_context();
     ctx.plugin(P {
         content: "Hello Plugin".to_string(),
         message: "Bye World".to_string(),
