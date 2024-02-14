@@ -1,3 +1,4 @@
+#![feature(test)]
 use kokoro::prelude::*;
 
 fn main() {

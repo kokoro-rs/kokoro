@@ -1,11 +1,13 @@
 use kokoro_core::{
-    context::{scope::LocalCache, Context},
+    context::{scope::Resource, Context},
     disposable::{Disposable, DisposableHandle},
 };
 use std::{
     sync::{atomic::AtomicBool, Arc},
     thread::{self, Builder, JoinHandle},
 };
+use kokoro_core::context::scope::Mode;
+
 /// Spawn threads for the Context
 pub trait ThreadContext {
     /// Spawn a thread
@@ -20,7 +22,8 @@ pub trait ThreadContext {
         f: F,
     ) -> Result<DisposableHandle<ThreadHandle<()>>, std::io::Error>;
 }
-impl<T: LocalCache + 'static> ThreadContext for Context<T> {
+
+impl<T: Resource + 'static, M: Mode + 'static> ThreadContext for Context<T, M> {
     #[inline(always)]
     fn spawn<F: FnOnce(&Self, SignalHandle) + Send + 'static>(
         &self,
@@ -48,8 +51,10 @@ impl<T: LocalCache + 'static> ThreadContext for Context<T> {
         )))
     }
 }
+
 /// A handle used to dispose of a thread
 pub struct ThreadHandle<T>(pub JoinHandle<T>, pub SignalHandle);
+
 impl<T> ThreadHandle<T> {
     #[inline(always)]
     fn new(join_handle: JoinHandle<T>, signal_handle: SignalHandle) -> Self {
@@ -65,8 +70,10 @@ impl<T> ThreadHandle<T> {
         self.0.join().unwrap();
     }
 }
+
 /// A handle used to pass a single signal
 pub struct SignalHandle(Arc<AtomicBool>);
+
 impl SignalHandle {
     /// Creates a handle for passing a single signal
     #[inline(always)]
@@ -89,11 +96,13 @@ impl SignalHandle {
         unsafe { *(self.0.as_ptr()) = false }
     }
 }
+
 impl Clone for SignalHandle {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
+
 impl Disposable for ThreadHandle<()> {
     #[inline(always)]
     fn dispose(self) {

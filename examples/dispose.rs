@@ -19,8 +19,8 @@ fn main() {
         //         ^^^^^^^^^ 's will expire here
         ctx.subscribe(|p: &Print| println!("next: {}", p.0));
         std::thread::sleep(std::time::Duration::from_secs(5));
-        thread_handle.dispose();
-        //            ^^^^^^^^^^ 't will expire here and join
+        dispose(thread_handle);
+        //      ^^^^^^^^^^^^^ 't will expire here and join
     });
 
     ctx.run();

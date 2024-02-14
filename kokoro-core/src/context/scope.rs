@@ -11,6 +11,11 @@ use std::sync::Arc;
 
 /// Dynamic storage content
 pub struct DynamicCache(DashMap<&'static str, Arc<dyn Any>>);
+
+unsafe impl Send for DynamicCache {}
+
+unsafe impl Sync for DynamicCache {}
+
 impl DynamicCache {
     /// Create a new dynamic cache
     pub fn new() -> Self {
@@ -50,6 +55,7 @@ impl DynamicCache {
         }
     }
 }
+
 impl Deref for DynamicCache {
     type Target = DashMap<&'static str, Arc<dyn Any>>;
 
@@ -59,35 +65,53 @@ impl Deref for DynamicCache {
 }
 
 /// For tags that can be cached, impl Send and Sync will do this auto-impl
-pub trait LocalCache: Send + Sync {}
+pub trait Resource: Send + Sync {}
+
+impl<T: Send + Sync> Resource for T {}
+
+pub trait Mode: Send + Sync {}
+
+impl<T: Send + Sync> Mode for T {}
+
 /// Used to cache the scope of the context
-pub struct Scope<T: LocalCache + ?Sized> {
-    schedule: Arc<Schedule<T>>,
-    subscopes: DashMap<ScopeId, Box<dyn Triggerable + Send + Sync>>,
+pub struct Scope<R: Resource + ?Sized, M: Mode + 'static> {
+    schedule: Arc<Schedule<R, M>>,
+    subscopes: DashMap<ScopeId, Box<dyn Triggerable<M> + Send + Sync>>,
     /// Cached content
-    pub cache: Box<T>,
+    pub resource: Box<R>,
     /// Dynamic storage content
-    dyn_cache: DynamicCache,
+    cache: DynamicCache,
 }
 
 /// Can be triggered
-pub trait Triggerable {
+pub trait Triggerable<M: Mode> {
     /// All the subscribers triggered the current scope
-    fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>);
+    fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn Resource, M>);
     /// Recursively triggers all subscribers of the current scope and descendant scope
-    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>);
+    fn trigger_recursive(
+        &self,
+        e: Arc<dyn Event + Send + Sync>,
+        ctx: &Context<dyn Resource, M>,
+    );
 }
-impl LocalCache for dyn Triggerable + Send + Sync {}
 
-unsafe impl<T: LocalCache + ?Sized> Send for Scope<T> {}
-unsafe impl<T: LocalCache + ?Sized> Sync for Scope<T> {}
-impl<T: LocalCache + ?Sized + 'static> Triggerable for Arc<Scope<T>> {
+impl<M: Mode> Resource for dyn Triggerable<M> + Send + Sync {}
+
+unsafe impl<T: Resource + ?Sized, M: Mode> Send for Scope<T, M> {}
+
+unsafe impl<T: Resource + ?Sized, M: Mode> Sync for Scope<T, M> {}
+
+impl<R: Resource + ?Sized + 'static, M: Mode> Triggerable<M> for Arc<Scope<R, M>> {
     #[inline(always)]
-    fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>) {
+    fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn Resource, M>) {
         self.schedule().trigger(e, &ctx.with(Arc::clone(&self)));
     }
     #[inline(always)]
-    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn LocalCache>) {
+    fn trigger_recursive(
+        &self,
+        e: Arc<dyn Event + Send + Sync>,
+        ctx: &Context<dyn Resource, M>,
+    ) {
         let ps = self.subscopes();
         ps.par_iter().for_each(|p| {
             let e = Arc::clone(&e);
@@ -96,50 +120,55 @@ impl<T: LocalCache + ?Sized + 'static> Triggerable for Arc<Scope<T>> {
         self.trigger(e, ctx);
     }
 }
-impl<T: LocalCache + ?Sized + 'static> Scope<T> {
+
+impl<R: Resource + ?Sized + 'static, M: Mode> Scope<R, M> {
     /// Fetching cache
     #[inline(always)]
-    pub fn cache(&self) -> &T {
-        self.cache.as_ref()
+    pub fn resource(&self) -> &R {
+        self.resource.as_ref()
     }
     /// Fetching dyn cache
     #[inline(always)]
-    pub fn dyn_cache(&self) -> &DynamicCache {
-        &self.dyn_cache
+    pub fn cache(&self) -> &DynamicCache {
+        &self.cache
     }
     /// Create a Scope
     #[inline(always)]
-    pub fn create(cache: Box<T>) -> Self {
+    pub fn create(resource: Box<R>) -> Self {
         Self {
-            schedule: Arc::new(Schedule::<T>::new()),
+            schedule: Arc::new(Schedule::<R, M>::new()),
             subscopes: DashMap::new(),
-            cache,
-            dyn_cache: DynamicCache::new(),
+            resource,
+            cache: DynamicCache::new(),
         }
     }
     /// Gets the schedule for the current scope
     #[inline(always)]
-    pub fn schedule(&self) -> Arc<Schedule<T>> {
+    pub fn schedule(&self) -> Arc<Schedule<R, M>> {
         Arc::clone(&self.schedule)
     }
     /// Get the scope of children
     #[inline(always)]
-    pub fn subscopes(&self) -> &DashMap<ScopeId, Box<dyn Triggerable + Send + Sync>> {
+    pub fn subscopes(&self) -> &DashMap<ScopeId, Box<dyn Triggerable<M> + Send + Sync>> {
         &self.subscopes
     }
 }
+
 /// Used to mark the scope of the identifier
 pub struct ScopeId {
     name: &'static str,
     pre_id: u64,
 }
+
 impl PartialEq for ScopeId {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.pre_id == other.pre_id && self.name == self.name
     }
 }
+
 impl Eq for ScopeId {}
+
 impl ScopeId {
     /// Create a new identifier
     #[inline(always)]
@@ -147,6 +176,7 @@ impl ScopeId {
         Self { name, pre_id: id }
     }
 }
+
 impl Hash for ScopeId {
     #[inline(always)]
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -154,6 +184,7 @@ impl Hash for ScopeId {
         state.write(self.name.as_bytes())
     }
 }
+
 impl Clone for ScopeId {
     #[inline(always)]
     fn clone(&self) -> Self {

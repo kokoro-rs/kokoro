@@ -16,5 +16,3 @@ pub mod schedule;
 pub mod subscriber;
 /// Basic implementation
 pub mod base_impl;
-pub use flume::unbounded as mpsc;
-pub use flume;

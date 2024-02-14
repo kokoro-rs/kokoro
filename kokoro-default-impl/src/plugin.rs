@@ -1,34 +1,38 @@
 use kokoro_core::context::{
-    scope::{LocalCache, Scope, ScopeId},
+    scope::{Resource, Scope, ScopeId},
     Context,
 };
 use parking_lot::Mutex;
 use rand::{rngs::mock::StepRng, Rng};
 use std::sync::Arc;
+use kokoro_core::context::scope::Mode;
 
 /// Plugin needs to impl this trait
-pub trait Plugin: LocalCache {
+pub trait Plugin<M: Mode + 'static>: Resource {
     /// Name of the plugin
     const NAME: &'static str;
     /// Is executed when the plugin is applied
-    fn apply(ctx: Context<Self>);
+    fn apply(ctx: Context<Self, M>);
 }
+
 /// Impl this for plug-ins
-pub trait Pluginable<P: Plugin + 'static> {
+pub trait Pluginable<M: Mode + 'static, P: Plugin<M> + 'static> {
     /// Call this for plug-ins
     fn plugin(&self, plugin: P) -> ScopeId;
 }
+
 /// Impl this for unplug-ins
 pub trait Unpluginable {
     /// Unplugin from the context
     fn unplugin(&self, id: ScopeId);
 }
-impl<T: LocalCache + 'static, P: Plugin + 'static> Pluginable<P> for Context<T> {
+
+impl<T: Resource + 'static, P: Plugin<M> + 'static, M: Mode + 'static> Pluginable<M, P> for Context<T, M> {
     #[inline(always)]
     fn plugin(&self, plugin: P) -> ScopeId {
         let scope_id_gen = self
             .scope()
-            .dyn_cache()
+            .cache()
             .default("kokoro-plugin-impl/scope_id_gen", || {
                 Arc::new(ScopeIdGen::new(StepRng::new(0, 1)))
             });
@@ -40,16 +44,19 @@ impl<T: LocalCache + 'static, P: Plugin + 'static> Pluginable<P> for Context<T> 
         id
     }
 }
-impl<T: LocalCache + 'static> Unpluginable for Context<T> {
+
+impl<T: Resource + 'static, M: Mode + 'static> Unpluginable for Context<T, M> {
     #[inline(always)]
     fn unplugin(&self, id: ScopeId) {
         self.scope().subscopes().remove(&id);
     }
 }
+
 /// Used to generate consecutive Scopeids that do not repeat
 pub struct ScopeIdGen<R: Rng> {
     rand: Mutex<R>,
 }
+
 impl<R: Rng> ScopeIdGen<R> {
     #[inline(always)]
     /// Iterate to get a new identifier
@@ -58,6 +65,7 @@ impl<R: Rng> ScopeIdGen<R> {
         ScopeId::new(name, num)
     }
 }
+
 impl<R: Rng> ScopeIdGen<R> {
     #[inline(always)]
     /// Create a ScopeIdGen

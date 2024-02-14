@@ -17,7 +17,6 @@ license = "Apache-2.0/MIT"
 nightly = []
 
 [dependencies]
-flume = "^0.11.0"
 parking_lot = "^0.12.1"
 rayon = "^1.8.1"
 

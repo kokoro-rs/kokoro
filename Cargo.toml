@@ -1,11 +1,11 @@
 [workspace]
 members = [
-  "kokoro-core",
-  "kokoro-default-impl",
-  "kokoro-dynamic-plugin",
-  "kokoro-macros",
-  "examples/dynamic-plugin",
-  "examples/dynamic-plugin/plugin-example",
+    "kokoro-core",
+    "kokoro-default-impl",
+    "kokoro-dynamic-plugin",
+    "kokoro-macros",
+    "examples/dynamic-plugin",
+    "examples/dynamic-plugin/plugin-example", "kokoro-flume-channel",
 ]
 
 [package]
@@ -15,20 +15,21 @@ edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro"
 description = "Dynamic publish-subscribe pattern framework. Support for dynamic plug-ins and AOP"
 keywords = [
-  "publish-subscribe",
-  "kokoro",
-  "aop",
-  "eventbus",
-  "pubsub",
+    "publish-subscribe",
+    "kokoro",
+    "aop",
+    "eventbus",
+    "pubsub",
 ]
 license = "Apache-2.0/MIT"
 
 [features]
-default = ["macros", "default-impl", "dynamic-plugin"]
+default = ["macros", "default-impl", "dynamic-plugin", "flume-channel"]
 nightly = ["kokoro-core/nightly"]
 macros = ["dep:kokoro-macros"]
 default-impl = ["dep:kokoro-default-impl"]
 dynamic-plugin = ["dep:kokoro-dynamic-plugin"]
+flume-channel = ["dep:kokoro-flume-channel"]
 
 [dependencies]
 
@@ -49,4 +50,9 @@ optional = true
 [dependencies.kokoro-dynamic-plugin]
 version = "0.0.3"
 path = "./kokoro-dynamic-plugin"
+optional = true
+
+[dependencies.kokoro-flume-channel]
+version = "0.0.1"
+path = "./kokoro-flume-channel"
 optional = true

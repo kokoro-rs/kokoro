@@ -1,82 +1,68 @@
-use super::scope::{LocalCache, Scope};
+use super::scope::{Mode, Resource, Scope};
+use crate::context::scope::DynamicCache;
 use crate::disposable::DisposableHandle;
-use crate::event::Event;
 use crate::schedule::{Schedule, WithNoneList, AROBS};
 use crate::subscriber::Subscriber;
-use flume::{Receiver, Sender};
 use std::ops::Deref;
 use std::sync::Arc;
 
-type SSE = dyn Event + Send + Sync;
-
 /// The heart of Kokoro
-pub struct Context<T: LocalCache + ?Sized> {
-    scope: Arc<Scope<T>>,
-    receiver: Receiver<Arc<SSE>>,
-    sender: Sender<Arc<SSE>>,
+pub struct Context<T: Resource + ?Sized, M: Mode + 'static> {
+    scope: Arc<Scope<T, M>>,
+    global: Arc<M>,
+    global_cache: Arc<DynamicCache>,
 }
 
-impl<T: LocalCache + ?Sized + 'static> Context<T> {
+impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     /// Create a new Context
     #[inline(always)]
-    pub fn new(scope: Arc<Scope<T>>, mpsc: (Sender<Arc<SSE>>, Receiver<Arc<SSE>>)) -> Self {
+    pub fn create(scope: Arc<Scope<R, M>>, global: Arc<M>) -> Self {
         Self {
-            receiver: mpsc.1,
-            sender: mpsc.0,
             scope,
+            global,
+            global_cache: Arc::new(DynamicCache::new()),
         }
     }
     /// Get the scope of the Context
     #[inline(always)]
-    pub fn scope(&self) -> Arc<Scope<T>> {
+    pub fn scope(&self) -> Arc<Scope<R, M>> {
         Arc::clone(&self.scope)
     }
     /// Place the current context in a new scope
     #[inline(always)]
-    pub fn with<N: LocalCache + ?Sized>(&self, scope: Arc<Scope<N>>) -> Context<N> {
+    pub fn with<N: Resource + ?Sized>(&self, scope: Arc<Scope<N, M>>) -> Context<N, M> {
         Context {
-            scope: scope,
-            receiver: self.receiver.clone(),
-            sender: self.sender.clone(),
+            scope,
+            global: self.global.clone(),
+            global_cache: Arc::clone(&self.global_cache),
         }
     }
     /// Gets the schedule of the node in the current scope.
     ///
     /// Note: It is not a get-schedule that includes the parent node
     #[inline(always)]
-    pub fn schedule(&self) -> Arc<Schedule<T>> {
+    pub fn schedule(&self) -> Arc<Schedule<R, M>> {
         self.scope().schedule()
     }
-    /// Publish an event to the main channel
     #[inline(always)]
-    pub fn publish<E>(&self, event: E) -> &Self
-    where
-        E: Event + Send + Sync,
-    {
-        self.sender.send(Arc::new(event)).unwrap();
-        self
+    pub fn global(&self) -> &M {
+        &self.global
     }
     /// Register a subscriber for the main channel
     #[inline]
-    pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<T>, T>>
-    where
-        Sub: Subscriber<Et, T> + 'static + Send + Sync,
-        Et: 'static + Sync + Send,
+    pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<R, M>, R, M>>
+        where
+            Sub: Subscriber<Et, R, M> + 'static + Send + Sync,
+            Et: 'static + Sync + Send,
     {
         DisposableHandle::new(self.schedule().insert(sub))
     }
-    /// Get a consumer of the primary channel
-    ///
-    /// Note: An event is consumed only once, even if multiple consumers cannot process the same event
-    #[inline(always)]
-    pub fn receiver(&self) -> Receiver<Arc<SSE>> {
-        self.receiver.clone()
-    }
 }
-impl<T: LocalCache + 'static> Deref for Context<T> {
-    type Target = T;
+
+impl<R: Resource + 'static, M: Mode> Deref for Context<R, M> {
+    type Target = R;
 
     fn deref(&self) -> &Self::Target {
-        self.scope.as_ref().cache.as_ref()
+        self.scope.as_ref().resource.as_ref()
     }
 }

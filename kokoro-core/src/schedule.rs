@@ -1,4 +1,4 @@
-use crate::context::scope::LocalCache;
+use crate::context::scope::{Mode, Resource};
 use crate::context::Context;
 use crate::disposable::Disposable;
 use crate::event::{Event, EventId};
@@ -7,17 +7,19 @@ use dashmap::DashMap;
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use std::sync::Arc;
+
 /// `Arc<RwLock<Option<Box<dyn ISubscriber<T> + Send + Sync>>>>`
-pub type AROBS<T> = Arc<RwLock<Option<Box<dyn ISubscriber<T> + Send + Sync>>>>;
+pub type AROBS<R, M> = Arc<RwLock<Option<Box<dyn ISubscriber<R, M> + Send + Sync>>>>;
+
 /// Schedule, to hold the subscriber
-pub struct Schedule<T: LocalCache + ?Sized> {
+pub struct Schedule<R: Resource + ?Sized, M: Mode + 'static> {
     /// The subscribers
-    pub subscribers: DashMap<EventId, Vec<AROBS<T>>>,
+    pub subscribers: DashMap<EventId, Vec<AROBS<R, M>>>,
     /// AROBS that are assigned an empty value for reuse
-    none: DashMap<EventId, Arc<RwLock<Vec<AROBS<T>>>>>,
+    none: DashMap<EventId, Arc<RwLock<Vec<AROBS<R, M>>>>>,
 }
 
-impl<T: LocalCache + Send + Sync + ?Sized + 'static> Schedule<T> {
+impl<R: Resource + Send + Sync + ?Sized + 'static, M: Mode> Schedule<R, M> {
     /// Create a schedule
     #[inline(always)]
     pub fn new() -> Self {
@@ -28,13 +30,13 @@ impl<T: LocalCache + Send + Sync + ?Sized + 'static> Schedule<T> {
     }
     /// Insert a subscriber into the schedule
     #[inline(always)]
-    pub fn insert<Sub, Et>(&self, sub: Sub) -> WithNoneList<AROBS<T>, T>
-    where
-        Sub: Subscriber<Et, T> + 'static + Send + Sync,
-        Et: 'static + Send + Sync,
+    pub fn insert<Sub, Et>(&self, sub: Sub) -> WithNoneList<AROBS<R, M>, R, M>
+        where
+            Sub: Subscriber<Et, R, M> + 'static + Send + Sync,
+            Et: 'static + Send + Sync,
     {
         let id = *sub.id();
-        let boxed: Box<dyn ISubscriber<T> + Send + Sync> = Box::new(SubscriberCache::new(sub));
+        let boxed: Box<dyn ISubscriber<R, M> + Send + Sync> = Box::new(SubscriberCache::new(sub));
         if let Some(none_vec) = self.none.get(&id) {
             if !none_vec.read().is_empty() {
                 let none = none_vec.write().pop().unwrap();
@@ -53,7 +55,7 @@ impl<T: LocalCache + Send + Sync + ?Sized + 'static> Schedule<T> {
     }
     /// Triggers a subscriber who has subscribed to an event in the schedule
     #[inline(always)]
-    pub fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<T>) {
+    pub fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<R, M>) {
         if let Some(subs) = self.subscribers.get_mut(e.event_id()) {
             subs.par_iter().for_each_with(e.as_ref(), |e, sub| {
                 if let Some(sub) = sub.write().as_mut() {
@@ -63,7 +65,7 @@ impl<T: LocalCache + Send + Sync + ?Sized + 'static> Schedule<T> {
         }
     }
     #[inline(always)]
-    fn with_none_list<N>(&self, some: N, id: &EventId) -> WithNoneList<N, T> {
+    fn with_none_list<N>(&self, some: N, id: &EventId) -> WithNoneList<N, R, M> {
         let vec = if let Some(none_vec) = self.none.get(id) {
             Arc::clone(&none_vec)
         } else {
@@ -76,24 +78,26 @@ impl<T: LocalCache + Send + Sync + ?Sized + 'static> Schedule<T> {
 }
 
 /// Wrapper for recycling AROBS-None
-pub struct WithNoneList<N, T: LocalCache + ?Sized> {
-    none_list: Arc<RwLock<Vec<AROBS<T>>>>,
+pub struct WithNoneList<N, R: Resource + ?Sized, M> {
+    none_list: Arc<RwLock<Vec<AROBS<R, M>>>>,
     some: N,
 }
-impl<N, T: LocalCache + ?Sized> WithNoneList<N, T> {
+
+impl<N, R: Resource + ?Sized, M> WithNoneList<N, R, M> {
     #[inline(always)]
-    fn new(none_list: Arc<RwLock<Vec<AROBS<T>>>>, some: N) -> Self {
+    fn new(none_list: Arc<RwLock<Vec<AROBS<R, M>>>>, some: N) -> Self {
         Self { none_list, some }
     }
 }
 
-impl<T: LocalCache + ?Sized> Disposable for AROBS<T> {
+impl<R: Resource + ?Sized, M> Disposable for AROBS<R, M> {
     #[inline(always)]
     fn dispose(self) {
         let _ = self.write().take();
     }
 }
-impl<T: LocalCache + ?Sized> Disposable for WithNoneList<AROBS<T>, T> {
+
+impl<R: Resource + ?Sized, M> Disposable for WithNoneList<AROBS<R, M>, R, M> {
     #[inline(always)]
     fn dispose(self) {
         let some_clone = Arc::clone(&self.some);

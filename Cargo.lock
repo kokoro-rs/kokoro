@@ -137,6 +137,7 @@ dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
  "kokoro-dynamic-plugin",
+ "kokoro-flume-channel",
  "kokoro-macros",
 ]
 
@@ -145,7 +146,6 @@ name = "kokoro-core"
 version = "0.0.3"
 dependencies = [
  "dashmap",
- "flume",
  "parking_lot",
  "rayon",
 ]
@@ -167,6 +167,15 @@ dependencies = [
  "kokoro-default-impl",
  "libloading",
  "rand",
+]
+
+[[package]]
+name = "kokoro-flume-channel"
+version = "0.0.1"
+dependencies = [
+ "flume",
+ "kokoro-core",
+ "parking_lot",
 ]
 
 [[package]]
