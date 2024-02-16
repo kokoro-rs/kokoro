@@ -65,7 +65,7 @@ use std::sync::Arc;
 fn main() {
     let ctx = mpsc_context();
     let lib = Arc::new(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)").unwrap() });
-    ctx.plugin_dynamic(lib).unwrap();
+    ctx.plugin_dynamic(lib, Some(Value::String("Hello from plugin".to_string()))).unwrap();
     ctx.publish(PhantomEvent);
     ctx.run();
     /* Typically, the output will be :
@@ -77,10 +77,12 @@ fn main() {
 **Plugin (Dynamic link library)**
 ```rust
 use kokoro::prelude::*;
+use kokoro::dynamic_plugin::toml::Value;
+
 
 #[derive(DynamicPlugin)]
 struct MyPlugin {
-    hello: &'static str,
+    hello: String,
 }
 
 impl Plugin for MyPlugin {
@@ -91,10 +93,14 @@ impl Plugin for MyPlugin {
     }
 }
 
-impl Default for MyPlugin {
-    fn default() -> Self {
+impl Create for MyPlugin {
+    fn create(config: Option<Value>) -> Self {
         Self {
-            hello: "Hello form plugin",
+            hello: if let Some(Value::String(s)) = config {
+                s
+            } else {
+                "hello".to_string()
+            }
         }
     }
 }

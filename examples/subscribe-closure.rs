@@ -1,11 +1,11 @@
 use kokoro::{core::context::scope::Triggerable, prelude::*};
-use kokoro_core::context::scope::{Resource, Scope};
+use kokoro_core::context::scope::Scope;
 use std::sync::atomic::{AtomicI32, Ordering::Relaxed};
 use std::sync::Arc;
 
 fn main() {
     static I: AtomicI32 = AtomicI32::new(0);
-    let scope = Scope::create(Box::new(Root::default()));
+    let scope = Scope::create(Arc::new(Root::default()));
     let ctx = Context::create(Arc::new(scope), Arc::new(()));
     // A closure can capture the environment, which in this case is atom I
     ctx.subscribe(|| {
