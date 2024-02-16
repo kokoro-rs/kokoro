@@ -116,7 +116,7 @@ fn sub(ctx: &Context<MyPlugin, MPSC>) {
   - [x] kokoro-thread-impl
   - [x] kokoro-service-impl (AOP Support)
 - [x] kokoro-dynamic-plugin-impl
-- [ ] plugin config
+- [x] plugin config
 - [ ] kokoro-plugin-loader (Hot-Reload Support)
 - [ ] kokoro-plugin-logger (Generic logging interface.)
 - [ ] kokoro-service-http (Http Service)
