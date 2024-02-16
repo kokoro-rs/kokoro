@@ -10,7 +10,7 @@ members = [
 
 [package]
 name = "kokoro"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro"
 description = "Dynamic publish-subscribe pattern framework. Support for dynamic plug-ins and AOP"

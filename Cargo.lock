@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
