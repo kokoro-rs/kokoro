@@ -12,4 +12,3 @@ path = "../../"
 
 [dependencies.plugin-example]
 path = "./plugin-example"
-crate-type = ["rlib"]

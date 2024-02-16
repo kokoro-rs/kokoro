@@ -145,8 +145,8 @@ pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         #[no_mangle]
-        extern "Rust" fn __plugin_create() -> ::std::sync::Arc<dyn ::kokoro::core::context::scope::Resource> {
-            ::std::sync::Arc::new(#name::default())
+        extern "Rust" fn __plugin_create(config: ::std::option::Option<::kokoro::dynamic_plugin::toml::value::Value>) -> ::std::sync::Arc<dyn ::kokoro::core::context::scope::Resource> {
+            ::std::sync::Arc::new(<#name as ::kokoro::dynamic_plugin::Create>::create(config))
         }
         #[no_mangle]
         extern "Rust" fn __plugin_name() -> &'static str {

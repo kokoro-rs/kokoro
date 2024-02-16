@@ -7,4 +7,6 @@
 pub mod thread;
 /// Implement pluggable for Context
 pub mod plugin;
+/// The implementation of the service for the Context
+pub mod service;
 

@@ -1,11 +1,13 @@
 use kokoro::prelude::*;
 use kokoro::core::context::scope::Resource;
-use std::sync::{Weak, Arc};
 use kokoro::prelude::scope::Mode;
+use std::sync::Arc;
+use kokoro::dynamic_plugin::toml::Value;
+
 
 #[derive(DynamicPlugin)]
 struct MyPlugin {
-    hello: &'static str,
+    hello: String,
 }
 
 impl Plugin for MyPlugin {
@@ -27,8 +29,7 @@ impl MyService for MyPlugin {
         println!("{}", self.hello);
         println!("!")
     }
-    fn bye(&self) {
-    }
+    fn bye(&self) {}
 }
 
 pub trait SetupMyService {
@@ -42,13 +43,18 @@ impl<R: Resource + 'static, M: Mode> SetupMyService for Context<R, M> {
 }
 
 
-impl Default for MyPlugin {
-    fn default() -> Self {
+impl Create for MyPlugin {
+    fn create(config: Option<Value>) -> Self {
         Self {
-            hello: "Hello form plugin! ",
+            hello: if let Some(Value::String(s)) = config {
+                s
+            } else {
+                "hello".to_string()
+            }
         }
     }
 }
+
 
 fn sub(ctx: &Context<MyPlugin, MPSC>) {
     println!(

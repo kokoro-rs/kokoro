@@ -1,6 +1,7 @@
 use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 use std::sync::Arc;
+use kokoro::dynamic_plugin::toml::Value;
 use plugin_example::SetupMyService;
 
 fn main() {
@@ -11,7 +12,7 @@ fn main() {
     } else {
         println!("no service");
     }
-    ctx.plugin_dynamic(lib).unwrap();
+    ctx.plugin_dynamic(lib, Some(Value::String("I am plugin".to_string()))).unwrap();
     if let Some(service) = ctx.my_service() {
         service.hello();
     } else {
