@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use kokoro::core::context::scope::Scope;
 use kokoro::core::context::Context;
-use kokoro::core::mpsc;
 struct Local {
     something: u32,
 }

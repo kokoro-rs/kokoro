@@ -6,8 +6,9 @@ struct MyPlugin {
 }
 
 impl Plugin for MyPlugin {
+    type MODE = MPSC;
     const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self>) {
+    fn apply(ctx: Context<Self, MPSC>) {
         ctx.subscribe(sub);
     }
 }
@@ -20,7 +21,7 @@ impl Default for MyPlugin {
     }
 }
 
-fn sub(ctx: &Context<MyPlugin>) {
+fn sub(ctx: &Context<MyPlugin, MPSC>) {
     println!(
         "{} {}",
         ctx.hello,
