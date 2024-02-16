@@ -70,6 +70,7 @@ name = "dynamic-plugin"
 version = "0.1.0"
 dependencies = [
  "kokoro",
+ "plugin-example",
 ]
 
 [[package]]

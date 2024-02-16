@@ -93,7 +93,7 @@ impl<T: Resource + ?Sized + 'static, E: Event + Send + Sync + 'static> Publishab
     }
 }
 pub fn mpsc_context() -> Context<Root, MPSC> {
-    let scope = Scope::create(Box::new(Root::default()));
+    let scope = Scope::create(Arc::new(Root::default()));
     let mode = MPSC::default();
     let ctx = Context::create(Arc::new(scope), Arc::new(mode));
     ctx

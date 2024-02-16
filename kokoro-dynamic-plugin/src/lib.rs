@@ -12,7 +12,7 @@ use rand::rngs::mock::StepRng;
 use std::sync::Arc;
 use kokoro_core::context::scope::Mode;
 
-type CreateFn = fn() -> Box<dyn Resource>;
+type CreateFn = fn() -> Arc<dyn Resource>;
 type NameFn = fn() -> &'static str;
 type ApplyFn<M> = fn(Context<dyn Resource, M>);
 

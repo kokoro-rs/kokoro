@@ -9,4 +9,4 @@ publish = false
 path = "../../../"
 
 [lib]
-crate-type = ["dylib"]
+crate-type = ["rlib","dylib"]

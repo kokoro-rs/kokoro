@@ -26,7 +26,7 @@ impl<M: Mode> Context<Root, M> {
     /// Create a root context
     #[inline(always)]
     pub fn new(global: Arc<M>) -> Self {
-        let scope = Scope::create(Box::new(Root::default()));
+        let scope = Scope::create(Arc::new(Root::default()));
         Context::create(Arc::new(scope), global)
     }
 }

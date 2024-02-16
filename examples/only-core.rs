@@ -42,10 +42,10 @@ impl<R: Resource + 'static, E> Publishable<E> for Context<R, SyncMode>
 }
 
 fn main() {
-    let scope = Scope::create(Box::new(Local { something: 123 }));
+    let scope = Scope::create(Arc::new(Local { something: 123 }));
     let ctx = Context::create(Arc::new(scope), Arc::new(SyncMode {}));
     ctx.say();
-    let ctx = ctx.with(Arc::new(Scope::create(Box::new(Other))));
+    let ctx = ctx.with(Arc::new(Scope::create(Arc::new(Other))));
     ctx.cry();
     let dh = ctx.subscribe(sub);
     ctx.publish(Test);

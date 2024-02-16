@@ -39,7 +39,7 @@ impl<T: Resource + 'static, P: Plugin<MODE=M> + 'static, M: Mode + 'static> Plug
                 Arc::new(ScopeIdGen::new(StepRng::new(0, 1)))
             });
         let id = scope_id_gen.next(P::NAME);
-        let plugin = Box::new(plugin);
+        let plugin = Arc::new(plugin);
         let scope = Arc::new(Scope::create(plugin));
         P::apply(self.with(Arc::clone(&scope)));
         self.scope().subscopes().insert(id.clone(), Box::new(scope));

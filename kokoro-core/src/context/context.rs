@@ -50,6 +50,12 @@ impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     pub fn global(&self) -> &M {
         &self.global
     }
+    #[inline(always)]
+    /// Get the global cache
+    pub fn cache(&self) -> &DynamicCache {
+        &self.global_cache
+    }
+
     /// Register a subscriber for the main channel
     #[inline(always)]
     pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<R, M>, R, M>>

@@ -77,7 +77,7 @@ pub struct Scope<R: Resource + ?Sized, M: Mode + 'static> {
     schedule: Arc<Schedule<R, M>>,
     subscopes: DashMap<ScopeId, Box<dyn Triggerable<M> + Send + Sync>>,
     /// Cached content
-    pub resource: Box<R>,
+    pub resource: Arc<R>,
     /// Dynamic storage content
     cache: DynamicCache,
 }
@@ -133,7 +133,7 @@ impl<R: Resource + ?Sized + 'static, M: Mode> Scope<R, M> {
     }
     /// Create a Scope
     #[inline(always)]
-    pub fn create(resource: Box<R>) -> Self {
+    pub fn create(resource: Arc<R>) -> Self {
         Self {
             schedule: Arc::new(Schedule::<R, M>::new()),
             subscopes: DashMap::new(),
