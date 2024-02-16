@@ -24,7 +24,7 @@ use std::fmt::Display;
 use kokoro::prelude::*;
 
 fn main() {
-    let ctx = Context::default();
+    let ctx = mpsc_context();
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher
@@ -43,8 +43,8 @@ fn main() {
     */
 }
 
-// This is a event:Print
 #[derive(Event)]
+// This is a event:Print
 struct Print(&'static dyn Display);
 
 // This is a subscriber who subscribes to the event:Print
@@ -63,7 +63,7 @@ use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 use std::sync::Arc;
 fn main() {
-    let ctx = Context::default();
+    let ctx = mpsc_context();
     let lib = Arc::new(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)").unwrap() });
     ctx.plugin_dynamic(lib).unwrap();
     ctx.publish(PhantomEvent);
@@ -84,8 +84,9 @@ struct MyPlugin {
 }
 
 impl Plugin for MyPlugin {
+    type MODE = MPSC;
     const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self>) {
+    fn apply(ctx: Context<Self, MPSC>) {
         ctx.subscribe(sub);
     }
 }
@@ -98,7 +99,7 @@ impl Default for MyPlugin {
     }
 }
 
-fn sub(ctx: &Context<MyPlugin>) {
+fn sub(ctx: &Context<MyPlugin, MPSC>) {
     println!(
         "{} {}",
         ctx.hello,
