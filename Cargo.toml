@@ -34,25 +34,25 @@ flume-channel = ["dep:kokoro-flume-channel"]
 [dependencies]
 
 [dependencies.kokoro-core]
-version = "0.0.3"
+version = "0.0.4"
 path = "./kokoro-core"
 
 [dependencies.kokoro-default-impl]
-version = "0.0.3"
+version = "0.0.4"
 path = "./kokoro-default-impl"
 optional = true
 
 [dependencies.kokoro-macros]
-version = "0.0.3"
+version = "0.0.4"
 path = "./kokoro-macros"
 optional = true
 
 [dependencies.kokoro-dynamic-plugin]
-version = "0.0.3"
+version = "0.0.4"
 path = "./kokoro-dynamic-plugin"
 optional = true
 
 [dependencies.kokoro-flume-channel]
-version = "0.0.1"
+version = "0.0.2"
 path = "./kokoro-flume-channel"
 optional = true

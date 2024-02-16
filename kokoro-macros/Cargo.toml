@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-macros"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-macros"
 description = "Kokoro's internal package, which are used for auto derives"
