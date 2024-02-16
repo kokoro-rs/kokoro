@@ -19,7 +19,8 @@ struct P {
     message: String,
 }
 
-impl Plugin<MPSC> for P {
+impl Plugin for P {
+    type MODE = MPSC;
     const NAME: &'static str = "P";
     fn apply(ctx: Context<Self, MPSC>) {
         ctx.subscribe(sub);
@@ -33,7 +34,8 @@ fn sub(ctx: &Context<P, MPSC>) {
 
 struct N;
 
-impl Plugin<MPSC> for N {
+impl Plugin for N {
+    type MODE = MPSC;
     const NAME: &'static str = "N";
     fn apply(ctx: Context<Self, MPSC>) {
         ctx.publish(PhantomEvent);

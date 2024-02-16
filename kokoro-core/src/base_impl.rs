@@ -8,6 +8,7 @@ use crate::{
 use std::sync::Arc;
 use crate::context::scope::Mode;
 
+/// Event Send Sync
 pub type SSE = dyn Event + Send + Sync;
 
 /// The root's cache
@@ -22,8 +23,9 @@ impl Default for Root {
 }
 
 impl<M: Mode> Context<Root, M> {
+    /// Create a root context
     #[inline(always)]
-    fn new(global: Arc<M>) -> Self {
+    pub fn new(global: Arc<M>) -> Self {
         let scope = Scope::create(Box::new(Root::default()));
         Context::create(Arc::new(scope), global)
     }

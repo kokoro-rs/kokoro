@@ -63,12 +63,11 @@ impl Deref for DynamicCache {
         &self.0
     }
 }
-
-/// For tags that can be cached, impl Send and Sync will do this auto-impl
+/// `Resource` is a trait that represents a resource that can be shared across threads safely.
 pub trait Resource: Send + Sync {}
 
 impl<T: Send + Sync> Resource for T {}
-
+/// `Mode` is a trait that anything that can be used as a mode should implement
 pub trait Mode: Send + Sync {}
 
 impl<T: Send + Sync> Mode for T {}

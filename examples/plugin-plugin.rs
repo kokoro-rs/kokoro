@@ -1,4 +1,5 @@
 use kokoro::prelude::*;
+
 fn main() {
     let ctx = mpsc_context();
     ctx.plugin(PF);
@@ -13,7 +14,9 @@ fn main() {
 }
 
 struct PF;
-impl Plugin<MPSC> for PF {
+
+impl Plugin for PF {
+    type MODE = MPSC;
     const NAME: &'static str = "PF";
     fn apply(ctx: Context<Self, MPSC>) {
         ctx.plugin(SF);
@@ -23,7 +26,9 @@ impl Plugin<MPSC> for PF {
 }
 
 struct SF;
-impl Plugin<MPSC> for SF {
+
+impl Plugin for SF {
+    type MODE = MPSC;
     const NAME: &'static str = "SF";
     fn apply(ctx: Context<Self, MPSC>) {
         ctx.subscribe(sub);
@@ -31,6 +36,6 @@ impl Plugin<MPSC> for SF {
     }
 }
 
-fn sub<P: Plugin<MPSC>>(_ctx: &Context<P, MPSC>) {
+fn sub<P: Plugin<MODE=MPSC>>(_ctx: &Context<P, MPSC>) {
     println!("From: {}", P::NAME);
 }

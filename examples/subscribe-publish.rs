@@ -2,7 +2,7 @@ use std::fmt::Display;
 use kokoro::prelude::*;
 
 fn main() {
-    let ctx = Context::default();
+    let ctx = mpsc_context();
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher

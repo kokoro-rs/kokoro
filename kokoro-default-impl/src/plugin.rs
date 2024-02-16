@@ -8,15 +8,17 @@ use std::sync::Arc;
 use kokoro_core::context::scope::Mode;
 
 /// Plugin needs to impl this trait
-pub trait Plugin<M: Mode + 'static>: Resource {
+pub trait Plugin: Resource {
+    /// Mode of the plugin
+    type MODE: Mode + 'static;
     /// Name of the plugin
     const NAME: &'static str;
     /// Is executed when the plugin is applied
-    fn apply(ctx: Context<Self, M>);
+    fn apply(ctx: Context<Self, Self::MODE>);
 }
 
 /// Impl this for plug-ins
-pub trait Pluginable<M: Mode + 'static, P: Plugin<M> + 'static> {
+pub trait Pluginable<M: Mode + 'static, P: Plugin<MODE=M> + 'static> {
     /// Call this for plug-ins
     fn plugin(&self, plugin: P) -> ScopeId;
 }
@@ -27,7 +29,7 @@ pub trait Unpluginable {
     fn unplugin(&self, id: ScopeId);
 }
 
-impl<T: Resource + 'static, P: Plugin<M> + 'static, M: Mode + 'static> Pluginable<M, P> for Context<T, M> {
+impl<T: Resource + 'static, P: Plugin<MODE=M> + 'static, M: Mode + 'static> Pluginable<M, P> for Context<T, M> {
     #[inline(always)]
     fn plugin(&self, plugin: P) -> ScopeId {
         let scope_id_gen = self

@@ -17,6 +17,7 @@ impl<D: Disposable> Disposable for DisposableHandle<D> {
         self.0.dispose()
     }
 }
+/// Dispose of something
 pub fn dispose<D: Disposable>(disposable: D) {
     disposable.dispose()
 }

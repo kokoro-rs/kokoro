@@ -40,22 +40,29 @@ impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     /// Gets the schedule of the node in the current scope.
     ///
     /// Note: It is not a get-schedule that includes the parent node
+    #[must_use]
     #[inline(always)]
     pub fn schedule(&self) -> Arc<Schedule<R, M>> {
         self.scope().schedule()
     }
+    /// Get global
     #[inline(always)]
     pub fn global(&self) -> &M {
         &self.global
     }
     /// Register a subscriber for the main channel
-    #[inline]
+    #[inline(always)]
     pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<R, M>, R, M>>
         where
             Sub: Subscriber<Et, R, M> + 'static + Send + Sync,
             Et: 'static + Sync + Send,
     {
         DisposableHandle::new(self.schedule().insert(sub))
+    }
+    /// Get the dynamic reference to the resource
+    #[inline(always)]
+    pub fn dynref(&self) -> &Context<dyn Resource, M> {
+        unsafe { &*(self as *const Context<R, M> as *const Context<dyn Resource, M>) }
     }
 }
 

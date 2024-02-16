@@ -14,7 +14,7 @@ use kokoro_core::context::scope::Mode;
 
 type CreateFn = fn() -> Box<dyn Resource>;
 type NameFn = fn() -> &'static str;
-type ApplyFn<M: Mode + 'static> = fn(Context<dyn Resource, M>);
+type ApplyFn<M> = fn(Context<dyn Resource, M>);
 
 /// Provide Context with the ability to dynamically load plugins
 pub trait DynamicPluginable<T: Resource> {

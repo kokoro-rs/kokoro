@@ -27,8 +27,7 @@ fn main() {
 struct Print;
 
 fn runner(ctx: &Context<Root, ()>) {
-    let ctx_dyn =
-        unsafe { &*(ctx as *const Context<Root, ()> as *const Context<dyn Resource, ()>) };
+    let ctx_dyn = ctx.dynref();
     ctx.scope()
         .trigger_recursive(Arc::new(PhantomEvent), ctx_dyn);
     ctx.scope().trigger_recursive(Arc::new(Print), ctx_dyn);

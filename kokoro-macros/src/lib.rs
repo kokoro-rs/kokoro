@@ -13,9 +13,9 @@ fn sort(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let generics = input.generics;
     let expanded: proc_macro2::TokenStream = match &input.data {
         Data::Struct(DataStruct {
-            fields: Fields::Named(fields),
-            ..
-        }) => {
+                         fields: Fields::Named(fields),
+                         ..
+                     }) => {
             let mut named_fields: Vec<_> = fields.named.iter().collect();
             named_fields.sort_by_key(|f| hash(&f.ident.clone().unwrap().to_string()));
             quote! {
@@ -142,17 +142,18 @@ pub fn stable_sorted_event(attr: TokenStream, item: TokenStream) -> TokenStream 
 pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
+
     let expanded = quote! {
         #[no_mangle]
-        fn __plugin_create() -> ::std::boxed::Box<dyn ::kokoro::core::context::scope::LocalCache> {
+        extern "Rust" fn __plugin_create() -> ::std::boxed::Box<dyn ::kokoro::core::context::scope::Resource> {
             ::std::boxed::Box::new(#name::default())
         }
         #[no_mangle]
-        fn __plugin_name() -> &'static str {
+        extern "Rust" fn __plugin_name() -> &'static str {
             #name::NAME
         }
         #[no_mangle]
-        fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::LocalCache>) {
+        extern "Rust" fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::Resource,<#name as ::kokoro::prelude::Plugin>::MODE>) {
             #name::apply(unsafe{ ::std::mem::transmute(ctx) });
         }
     };
