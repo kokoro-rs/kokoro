@@ -116,8 +116,15 @@ fn sub(ctx: &Context<MyPlugin, MPSC>) {
 
 <br/>
 
-## Stargazers over time
-[![Stargazers over time](https://starchart.cc/kokoro-rs/kokoro.svg?variant=adaptive)](https://starchart.cc/kokoro-rs/kokoro)
+## Star History
+
+<a href="https://star-history.com/#kokoro-rs/kokoro&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=kokoro-rs/kokoro&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=kokoro-rs/kokoro&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=kokoro-rs/kokoro&type=Date" />
+  </picture>
+</a>
 
 <br/>
 
