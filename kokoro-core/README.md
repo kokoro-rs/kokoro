@@ -116,6 +116,11 @@ fn sub(ctx: &Context<MyPlugin, MPSC>) {
 
 <br/>
 
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/kokoro-rs/kokoro.svg?variant=adaptive)](https://starchart.cc/kokoro-rs/kokoro)
+
+<br/>
+
 ## todo list
 - [x] kokoro-default-impl
   - [x] kokoro-plugin-impl
