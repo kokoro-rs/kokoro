@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "anyhow"
+version = "1.0.80"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ad32ce52e4161730f7098c077cd2ed6229b5804ccf99e5366be1ab72a98b4e1"
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -171,6 +177,7 @@ dependencies = [
 name = "kokoro-default-impl"
 version = "0.0.4"
 dependencies = [
+ "anyhow",
  "kokoro-core",
  "parking_lot",
  "rand",

@@ -1,3 +1,5 @@
+pub use anyhow::{self, Result};
+use kokoro_core::context::scope::Mode;
 use kokoro_core::context::{
     scope::{Resource, Scope, ScopeId},
     Context,
@@ -5,7 +7,6 @@ use kokoro_core::context::{
 use parking_lot::Mutex;
 use rand::{rngs::mock::StepRng, Rng};
 use std::sync::Arc;
-use kokoro_core::context::scope::Mode;
 
 /// Plugin needs to impl this trait
 pub trait Plugin: Resource {
@@ -14,13 +15,13 @@ pub trait Plugin: Resource {
     /// Name of the plugin
     const NAME: &'static str;
     /// Is executed when the plugin is applied
-    fn apply(ctx: Context<Self, Self::MODE>);
+    fn apply(ctx: Context<Self, Self::MODE>)->Result<()>;
 }
 
 /// Impl this for plug-ins
-pub trait Pluginable<M: Mode + 'static, P: Plugin<MODE=M> + 'static> {
+pub trait Pluginable<M: Mode + 'static, P: Plugin<MODE = M> + 'static> {
     /// Call this for plug-ins
-    fn plugin(&self, plugin: P) -> ScopeId;
+    fn plugin(&self, plugin: P) -> Result<ScopeId>;
 }
 
 /// Impl this for unplug-ins
@@ -29,9 +30,11 @@ pub trait Unpluginable {
     fn unplugin(&self, id: ScopeId);
 }
 
-impl<T: Resource + 'static, P: Plugin<MODE=M> + 'static, M: Mode + 'static> Pluginable<M, P> for Context<T, M> {
+impl<T: Resource + 'static, P: Plugin<MODE = M> + 'static, M: Mode + 'static> Pluginable<M, P>
+    for Context<T, M>
+{
     #[inline(always)]
-    fn plugin(&self, plugin: P) -> ScopeId {
+    fn plugin(&self, plugin: P) -> Result<ScopeId> {
         let scope_id_gen = self
             .scope()
             .cache()
@@ -41,9 +44,9 @@ impl<T: Resource + 'static, P: Plugin<MODE=M> + 'static, M: Mode + 'static> Plug
         let id = scope_id_gen.next(P::NAME);
         let plugin = Arc::new(plugin);
         let scope = Arc::new(Scope::create(plugin));
-        P::apply(self.with(Arc::clone(&scope)));
+        P::apply(self.with(Arc::clone(&scope)))?;
         self.scope().subscopes().insert(id.clone(), Box::new(scope));
-        id
+        Ok(id)
     }
 }
 

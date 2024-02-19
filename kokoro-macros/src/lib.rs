@@ -145,16 +145,17 @@ pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         #[no_mangle]
-        extern "Rust" fn __plugin_create(config: ::std::option::Option<::kokoro::dynamic_plugin::toml::value::Value>) -> ::std::sync::Arc<dyn ::kokoro::core::context::scope::Resource> {
-            ::std::sync::Arc::new(<#name as ::kokoro::dynamic_plugin::Create>::create(config))
+        extern "Rust" fn __plugin_create(config: ::std::option::Option<::kokoro::dynamic_plugin::toml::value::Value>) -> ::kokoro::default_impl::plugin::Result<::std::sync::Arc<dyn ::kokoro::core::context::scope::Resource>> {
+            let value = <#name as ::kokoro::dynamic_plugin::Create>::create(config)?;
+            Ok(::std::sync::Arc::new(value))
         }
         #[no_mangle]
         extern "Rust" fn __plugin_name() -> &'static str {
             #name::NAME
         }
         #[no_mangle]
-        extern "Rust" fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::Resource,<#name as ::kokoro::prelude::Plugin>::MODE>) {
-            #name::apply(unsafe{ ::std::mem::transmute(ctx) });
+        extern "Rust" fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::Resource,<#name as ::kokoro::prelude::Plugin>::MODE>)-> ::kokoro::default_impl::plugin::Result<()>{
+            #name::apply(unsafe{ ::std::mem::transmute(ctx) })
         }
     };
 
