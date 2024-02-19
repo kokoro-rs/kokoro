@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-flume-channel"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 repository = "https://github.com/kokoro-rs/kokoro/tree/main/kokoro-flume-channel"
 description = "Kokoro's internal package, which implements dynamic plug-in"
@@ -19,4 +19,4 @@ parking_lot = "^0.12.1"
 
 [dependencies.kokoro-core]
 path = "../kokoro-core"
-version = "^0.0.4"
+version = "^0.0.5"

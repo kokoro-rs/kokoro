@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-dynamic-plugin"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 repository = "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-dynamic-plugin"
 description = "Kokoro's internal package, which implements dynamic plug-in"
@@ -20,7 +20,7 @@ serde = "^1.0.196"
 toml = "0.8.10"
 [dependencies.kokoro-core]
 path = "../kokoro-core"
-version = "^0.0.4"
+version = "^0.0.5"
 [dependencies.kokoro-default-impl]
 path = "../kokoro-default-impl"
-version = "^0.0.4"
+version = "^0.0.5"

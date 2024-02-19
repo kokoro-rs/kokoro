@@ -155,7 +155,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
@@ -166,7 +166,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-core"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "dashmap",
  "parking_lot",
@@ -175,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-default-impl"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "anyhow",
  "kokoro-core",
@@ -185,7 +185,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-dynamic-plugin"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "kokoro-core",
  "kokoro-default-impl",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-flume-channel"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "flume",
  "kokoro-core",
@@ -206,7 +206,7 @@ dependencies = [
 
 [[package]]
 name = "kokoro-macros"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "proc-macro2",
  "quote",
