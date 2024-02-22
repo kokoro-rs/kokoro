@@ -6,12 +6,10 @@
   [![Crates.io Version](https://img.shields.io/crates/v/kokoro)](https://crates.io/crates/kokoro)
   ![Crates.io License](https://img.shields.io/crates/l/kokoro)
   
-  Dynamic publish-subscribe pattern framework.
+  Dynamic publish-subscribe pattern framework. 
   
   Support for dynamic plug-ins and AOP
-
-  We hope to use Rust to build highly decoupled applications or servers that can be hot-reloaded.
-
+  
   <h2>Not yet stable, do not use in production !!</h2>
 </div>
 
@@ -129,12 +127,14 @@ fn sub(ctx: &Context<MyPlugin, MPSC>) {
 <br/>
 
 ## todo list
-- [x] kokoro-default-impl
-  - [x] kokoro-plugin-impl
-  - [x] kokoro-thread-impl
-  - [x] kokoro-service-impl (AOP Support)
-- [x] kokoro-dynamic-plugin-impl
-- [x] plugin config
-- [ ] kokoro-plugin-loader (Hot-Reload Support)
-- [ ] kokoro-plugin-logger (Generic logging interface.)
-- [ ] kokoro-service-http (Http Service)
+
+- [x] `kokoro-default-impl`
+  - [x] `kokoro-plugin-impl`
+  - [x] `kokoro-thread-impl`
+  - [x] `kokoro-service-impl (AOP Support)`
+- [x] `kokoro-dynamic-plugin-impl`
+- [x] plugin config api
+- [ ] `loader` for dynamically and schematically loading plugins.
+- [ ] `logger` for uniform output logging of plugins.
+- [ ] `k-onfig` is used to hint configuration schema.
+- [ ] `Satori (EventType only)` for instant messaging or chatbots
