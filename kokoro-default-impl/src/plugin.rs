@@ -27,7 +27,7 @@ pub trait Pluginable<M: Mode + 'static, P: Plugin<MODE = M> + 'static> {
 /// Impl this for unplug-ins
 pub trait Unpluginable {
     /// Unplugin from the context
-    fn unplugin(&self, id: ScopeId);
+    fn unplug(&self, id: ScopeId);
 }
 
 impl<T: Resource + 'static, P: Plugin<MODE = M> + 'static, M: Mode + 'static> Pluginable<M, P>
@@ -52,7 +52,7 @@ impl<T: Resource + 'static, P: Plugin<MODE = M> + 'static, M: Mode + 'static> Pl
 
 impl<T: Resource + 'static, M: Mode + 'static> Unpluginable for Context<T, M> {
     #[inline(always)]
-    fn unplugin(&self, id: ScopeId) {
+    fn unplug(&self, id: ScopeId) {
         self.scope().subscopes().remove(&id);
     }
 }
