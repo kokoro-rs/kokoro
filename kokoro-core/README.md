@@ -62,8 +62,10 @@ use kokoro::prelude::*;
 use std::sync::Arc;
 fn main() {
     let ctx = mpsc_context();
-    let lib = Arc::new(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)").unwrap() });
-    ctx.plugin_dynamic(lib, Some(Value::String("Hello from plugin".to_string()))).unwrap();
+    // let dyp = DynamicPlugin::from_path("path to Plugin (Dynamic link library)"); // Also can do it
+    // let dyp = DynamicPlugin::try_from(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)") }); // Also can do it
+    let dyp = "path to Plugin (Dynamic link library)"; // String or Library or DynamicPlugin
+    ctx.plugin_dynamic(dyp, Some(Value::String("Hello from plugin".to_string()))).unwrap();
     ctx.publish(PhantomEvent);
     ctx.run();
     /* Typically, the output will be :
