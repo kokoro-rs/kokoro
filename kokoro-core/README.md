@@ -136,5 +136,5 @@ fn sub(ctx: &Context<MyPlugin, MPSC>) {
 - [x] plugin config api
 - [ ] `loader` for dynamically and schematically loading plugins.
 - [ ] `logger` for uniform output logging of plugins.
-- [ ] `k-onfig` is used to hint configuration schema.
+- [x] `k-onfig` is used to hint configuration schema.
 - [ ] `Satori (EventType only)` for instant messaging or chatbots
