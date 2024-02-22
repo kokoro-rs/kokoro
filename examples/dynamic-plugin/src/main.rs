@@ -1,18 +1,20 @@
+use kokoro::core::context::scope::Mode;
 use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
-use std::sync::Arc;
-use kokoro::dynamic_plugin::toml::Value;
 use plugin_example::SetupMyService;
 
 fn main() {
     let ctx = mpsc_context();
-    let lib = Arc::new(unsafe { libloading::Library::new("plugin_example.dll").expect("plugin_example.dll unable to load") });
     if let Some(service) = ctx.my_service() {
         service.hello();
     } else {
         println!("no service");
     }
-    ctx.plugin_dynamic(lib, Some(Value::String("I am plugin".to_string()))).unwrap();
+    let config = toml::toml! {
+        content = "I am plugin"
+    };
+    ctx.plugin_dynamic("plugin_dynamic.dll", Some(config.into()))
+        .unwrap();
     if let Some(service) = ctx.my_service() {
         service.hello();
     } else {
@@ -20,4 +22,14 @@ fn main() {
     }
     ctx.publish(PhantomEvent);
     ctx.run();
+}
+trait ConfigSchema {
+    fn config_schema(&self);
+}
+impl<M: Mode + 'static> ConfigSchema for DynamicPlugin<M> {
+    fn config_schema(&self) {
+        unsafe {
+            self.get::<fn()>(b"__config_schema").unwrap()();
+        };
+    }
 }
