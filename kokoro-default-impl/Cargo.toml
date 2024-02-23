@@ -1,6 +1,6 @@
 [package]
 name = "kokoro-default-impl"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2021"
 repository =  "https://github.com/Kokoro-rs/kokoro/tree/main/kokoro-default-impl"
 description = "Kokoro's internal package, which implements some commonly used things"
@@ -21,6 +21,6 @@ rand = "^0.8.5"
 
 
 [dependencies.kokoro-core]
-version = "^0.0.5"
+version = "^0.0.6"
 path = "../kokoro-core"
 

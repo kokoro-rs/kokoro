@@ -1,10 +1,7 @@
-use kokoro::core::context::scope::Mode;
-use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
 use plugin_example::SetupMyService;
-
 fn main() {
-    let ctx = mpsc_context();
+    let ctx = mpsc_context(0u8);
     if let Some(service) = ctx.my_service() {
         service.hello();
     } else {
@@ -22,14 +19,4 @@ fn main() {
     }
     ctx.publish(PhantomEvent);
     ctx.run();
-}
-trait ConfigSchema {
-    fn config_schema(&self);
-}
-impl<M: Mode + 'static> ConfigSchema for DynamicPlugin<M> {
-    fn config_schema(&self) {
-        unsafe {
-            self.get::<fn()>(b"__config_schema").unwrap()();
-        };
-    }
 }

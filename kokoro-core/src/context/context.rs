@@ -7,8 +7,8 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 /// The heart of Kokoro
-pub struct Context<T: Resource + ?Sized, M: Mode + 'static> {
-    scope: Arc<Scope<T, M>>,
+pub struct Context<R: Resource + ?Sized, M: Mode + 'static> {
+    scope: Arc<Scope<R, M>>,
     global: Arc<M>,
     global_cache: Arc<DynamicCache>,
 }

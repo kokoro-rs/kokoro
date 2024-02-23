@@ -1,8 +1,8 @@
-use std::fmt::Display;
 use kokoro::prelude::*;
-
+use std::fmt::Display;
+struct App;
 fn main() {
-    let ctx = mpsc_context();
+    let ctx = mpsc_context(App);
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher
@@ -18,7 +18,7 @@ fn main() {
     /* Typically, the output will be :
      *  Hello World
      *  ...
-    */
+     */
 }
 
 #[derive(Event)]

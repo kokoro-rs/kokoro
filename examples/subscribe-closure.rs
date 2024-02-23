@@ -3,9 +3,10 @@ use kokoro_core::context::scope::Scope;
 use std::sync::atomic::{AtomicI32, Ordering::Relaxed};
 use std::sync::Arc;
 
+struct App;
 fn main() {
     static I: AtomicI32 = AtomicI32::new(0);
-    let scope = Scope::create(Arc::new(Root::default()));
+    let scope = Scope::create(Arc::new(App));
     let ctx = Context::create(Arc::new(scope), Arc::new(()));
     // A closure can capture the environment, which in this case is atom I
     ctx.subscribe(|| {
@@ -26,7 +27,7 @@ fn main() {
 #[derive(Event)]
 struct Print;
 
-fn runner(ctx: &Context<Root, ()>) {
+fn runner(ctx: &Context<App, ()>) {
     let ctx_dyn = ctx.dynref();
     ctx.scope()
         .trigger_recursive(Arc::new(PhantomEvent), ctx_dyn);

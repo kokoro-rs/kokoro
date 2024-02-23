@@ -1,19 +1,21 @@
 use kokoro::core::context::scope::Resource;
+use kokoro::default_impl::plugin::anyhow::anyhow;
 use kokoro::default_impl::plugin::Result;
 use kokoro::dynamic_plugin::toml::Value;
 use kokoro::prelude::scope::Mode;
 use kokoro::prelude::*;
+use serde::Deserialize;
 use std::sync::Arc;
 
-#[derive(DynamicPlugin)]
+#[derive(DynamicPlugin, Deserialize)]
 struct MyPlugin {
-    hello: String,
+    content: String,
 }
 
 impl Plugin for MyPlugin {
-    type MODE = MPSC;
+    type MODE = MPSC<u8>;
     const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
+    fn apply(ctx: Context<Self, MPSC<u8>>) -> Result<()> {
         ctx.subscribe(sub);
         kokoro::default_impl::init_service!(ctx, "plugin-example", MyService);
         Ok(())
@@ -27,8 +29,7 @@ pub trait MyService {
 
 impl MyService for MyPlugin {
     fn hello(&self) {
-        println!("{}", self.hello);
-        println!("!")
+        println!("{}!", self.content);
     }
     fn bye(&self) {}
 }
@@ -45,16 +46,15 @@ impl<R: Resource + 'static, M: Mode> SetupMyService for Context<R, M> {
 
 impl Create for MyPlugin {
     fn create(config: Option<Value>) -> Result<Self> {
-        Ok(Self {
-            hello: if let Some(Value::String(s)) = config {
-                s
-            } else {
-                "hello".to_string()
-            },
-        })
+        if let Some(config) = config {
+            let config = MyPlugin::deserialize(config)?;
+            Ok(config)
+        } else {
+            Err(anyhow!("需要配置"))
+        }
     }
 }
 
-fn sub(ctx: &Context<MyPlugin, MPSC>) {
-    println!("{} {}", ctx.hello, MyPlugin::NAME);
+fn sub(ctx: &Context<MyPlugin, MPSC<u8>>) {
+    println!("{} {}", ctx.content, MyPlugin::NAME);
 }

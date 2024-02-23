@@ -9,7 +9,6 @@ pub mod prelude {
     pub use super::dynamic_plugin::*;
     #[cfg(feature = "macros")]
     pub use super::macros::*;
-    pub use kokoro_core::base_impl::*;
     pub use kokoro_core::context::*;
     pub use kokoro_core::disposable::*;
     pub use kokoro_core::event::*;

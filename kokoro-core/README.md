@@ -20,9 +20,9 @@
 ```rust
 use std::fmt::Display;
 use kokoro::prelude::*;
-
+struct App;
 fn main() {
-    let ctx = mpsc_context();
+    let ctx = mpsc_context(App);
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher
@@ -57,20 +57,23 @@ fn sub_print(print: &Print) {
 
 **APP**
 ```rust
-use kokoro::dynamic_plugin::*;
 use kokoro::prelude::*;
-use std::sync::Arc;
-fn main() {
-    let ctx = mpsc_context();
+
+fn main() -> Result<()> {
+    let ctx = mpsc_context(0u8);
     // let dyp = DynamicPlugin::from_path("path to Plugin (Dynamic link library)"); // Also can do it
     // let dyp = DynamicPlugin::try_from(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)") }); // Also can do it
     let dyp = "path to Plugin (Dynamic link library)"; // String or Library or DynamicPlugin
-    ctx.plugin_dynamic(dyp, Some(Value::String("Hello from plugin".to_string()))).unwrap();
+    let config = toml::toml! {
+        content = "I am plugin"
+    };
+    ctx.plugin_dynamic(dyp, Some(content.into()))?;
     ctx.publish(PhantomEvent);
     ctx.run();
     /* Typically, the output will be :
      *  Hello from plugin plugin-example
     */
+    Ok(())
 }
 ```
 
@@ -78,34 +81,34 @@ fn main() {
 ```rust
 use kokoro::prelude::*;
 use kokoro::dynamic_plugin::toml::Value;
+use serde::Deserialize;
 
-
-#[derive(DynamicPlugin)]
+#[derive(DynamicPlugin, Deserialize)]
 struct MyPlugin {
     hello: String,
 }
 
 impl Plugin for MyPlugin {
-    type MODE = MPSC;
+    type MODE = MPSC<u8>;
     const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self, MPSC>) {
+    fn apply(ctx: Context<Self, MPSC<u8>>) -> Result<()> {
         ctx.subscribe(sub);
+        Ok(())
     }
 }
 
 impl Create for MyPlugin {
-    fn create(config: Option<Value>) -> Self {
-        Self {
-            hello: if let Some(Value::String(s)) = config {
-                s
-            } else {
-                "hello".to_string()
-            }
+    fn create(config: Option<Value>) -> Result<Self> {
+        if let Some(config) = config {
+            let config = MyPlugin::deserialize(config)?;
+            Ok(config)
+        } else {
+            Err(anyhow!("Required Config"))
         }
     }
 }
 
-fn sub(ctx: &Context<MyPlugin, MPSC>) {
+fn sub(ctx: &Context<MyPlugin, MPSC<u8>>) {
     println!(
         "{} {}",
         ctx.hello,
