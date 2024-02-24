@@ -19,6 +19,7 @@ type CreateFn = fn(config: Option<Value>) -> Result<Arc<dyn Resource>>;
 type NameFn = fn() -> &'static str;
 type ApplyFn<M> = fn(Context<dyn Resource, M>) -> Result<()>;
 
+/// Dynamic Plugin
 pub struct DynamicPlugin<M: Mode + 'static> {
     lib: Library,
     create_fn: CreateFn,
@@ -26,10 +27,12 @@ pub struct DynamicPlugin<M: Mode + 'static> {
     apply_fn: ApplyFn<M>,
 }
 impl<M: Mode + 'static> DynamicPlugin<M> {
+    /// load plugin from path
     pub fn from_path<P: AsRef<OsStr>>(path: P) -> Result<Self> {
         let lib = unsafe { libloading::Library::new(path)? };
         Self::from_lib(lib)
     }
+    /// load plugin from lib
     pub fn from_lib(lib: Library) -> Result<Self> {
         let create_fn = unsafe { lib.get::<CreateFn>(b"__plugin_create")?.into_raw() };
         let name = unsafe { lib.get::<NameFn>(b"__plugin_name")?() };
@@ -41,15 +44,19 @@ impl<M: Mode + 'static> DynamicPlugin<M> {
             lib,
         })
     }
+    /// call create function
     pub fn create(&self, config: Option<Value>) -> Result<Arc<dyn Resource>> {
         (self.create_fn)(config)
     }
+    /// call apply function
     pub fn apply(&self, ctx: Context<dyn Resource, M>) -> Result<()> {
         (self.apply_fn)(ctx)
     }
+    /// get name
     pub fn name(&self) -> &'static str {
         self.name
     }
+    /// get from lib
     pub unsafe fn get<'lib, T>(
         &'lib self,
         symbol: &[u8],
@@ -108,7 +115,7 @@ pub trait DynamicPluginable<R: Resource, M: Mode + 'static> {
     where
         DyP: Into<IntoDynamicPlugin<M>>;
 }
-
+/// into dynamic plugin
 pub struct IntoDynamicPlugin<M: Mode + 'static>(pub Result<DynamicPlugin<M>>);
 impl<M: Mode + 'static> From<Result<DynamicPlugin<M>>> for IntoDynamicPlugin<M> {
     fn from(value: Result<DynamicPlugin<M>>) -> Self {
