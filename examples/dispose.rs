@@ -1,7 +1,6 @@
 use kokoro::prelude::*;
-struct App;
 fn main() {
-    let ctx = mpsc_context(App);
+    let ctx = channel_ctx();
     let sub_handle = ctx.subscribe(|p: &Print| println!("{}", p.0));
     //                   ^^^^^^^^^  Let's call this subscriber 's
     let thread_handle = ctx.spawn(|ctx, s| {

@@ -1,9 +1,8 @@
 use kokoro::prelude::*;
 use std::fmt::Display;
 use std::thread::Builder;
-struct App;
 fn main() {
-    let ctx = mpsc_context(App);
+    let ctx = channel_ctx();
     ctx.subscribe(sub0);
     ctx.subscribe(sub1);
     ctx.subscribe(sub2);

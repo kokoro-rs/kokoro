@@ -1,7 +1,6 @@
 use kokoro::prelude::*;
-struct App;
 fn main() -> Result<()> {
-    let ctx = mpsc_context(App);
+    let ctx = channel_ctx();
     for _ in 0..=1000000 {
         let id = ctx.plugin(Test)?;
         ctx.unplug(id);
@@ -15,9 +14,9 @@ fn main() -> Result<()> {
 struct Test;
 
 impl Plugin for Test {
-    type MODE = MPSC<App>;
+    type MODE = MPSC;
     const NAME: &'static str = "test";
-    fn apply(ctx: Context<Self, MPSC<App>>) -> Result<()> {
+    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
         ctx.subscribe(sub);
         Ok(())
     }

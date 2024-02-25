@@ -1,8 +1,7 @@
 use kokoro::prelude::*;
 use std::fmt::Display;
-struct App;
 fn main() {
-    let ctx = mpsc_context(App);
+    let ctx = channel_ctx();
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher

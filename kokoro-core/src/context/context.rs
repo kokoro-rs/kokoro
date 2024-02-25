@@ -50,18 +50,17 @@ impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     pub fn global(&self) -> &M {
         &self.global
     }
-    #[inline(always)]
     /// Get the global cache
+    #[inline(always)]
     pub fn cache(&self) -> &DynamicCache {
         &self.global_cache
     }
-
     /// Register a subscriber for the main channel
     #[inline(always)]
     pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<R, M>, R, M>>
-        where
-            Sub: Subscriber<Et, R, M> + 'static + Send + Sync,
-            Et: 'static + Sync + Send,
+    where
+        Sub: Subscriber<Et, R, M> + 'static + Send + Sync,
+        Et: 'static + Sync + Send,
     {
         DisposableHandle::new(self.schedule().insert(sub))
     }

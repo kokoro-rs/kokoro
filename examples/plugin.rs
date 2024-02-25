@@ -1,8 +1,7 @@
 use kokoro::prelude::*;
 
-struct App;
 fn main() -> Result<()> {
-    let ctx = mpsc_context(App);
+    let ctx = channel_ctx();
     ctx.plugin(P {
         content: "Hello Plugin".to_string(),
         message: "Bye World".to_string(),
@@ -22,15 +21,15 @@ struct P {
 }
 
 impl Plugin for P {
-    type MODE = MPSC<App>;
+    type MODE = MPSC;
     const NAME: &'static str = "P";
-    fn apply(ctx: Context<Self, MPSC<App>>) -> Result<()> {
+    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
         ctx.subscribe(sub);
         Ok(())
     }
 }
 
-fn sub(ctx: &Context<P, MPSC<App>>) {
+fn sub(ctx: &Context<P, MPSC>) {
     println!("{}", ctx.content);
     println!("{}", ctx.message);
 }
@@ -38,9 +37,9 @@ fn sub(ctx: &Context<P, MPSC<App>>) {
 struct N;
 
 impl Plugin for N {
-    type MODE = MPSC<App>;
+    type MODE = MPSC;
     const NAME: &'static str = "N";
-    fn apply(ctx: Context<Self, MPSC<App>>) -> Result<()> {
+    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
         ctx.publish(PhantomEvent);
         Ok(())
     }
