@@ -10,39 +10,6 @@ use std::sync::Arc;
 struct MyPlugin {
     content: String,
 }
-
-impl Plugin for MyPlugin {
-    type MODE = MPSC;
-    const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
-        ctx.subscribe(sub);
-        kokoro::default_impl::init_service!(ctx, "plugin-example", MyService);
-        Ok(())
-    }
-}
-
-pub trait MyService {
-    fn hello(&self);
-    fn bye(&self);
-}
-
-impl MyService for MyPlugin {
-    fn hello(&self) {
-        println!("{}!", self.content);
-    }
-    fn bye(&self) {}
-}
-
-pub trait SetupMyService {
-    fn my_service(&self) -> Option<Arc<dyn MyService>>;
-}
-
-impl<R: Resource + 'static, M: Mode> SetupMyService for Context<R, M> {
-    fn my_service(&self) -> Option<Arc<dyn MyService>> {
-        kokoro::default_impl::get_service!(self, "plugin-example", MyService)
-    }
-}
-
 impl Create for MyPlugin {
     fn create(config: Option<Value>) -> Result<Self> {
         if let Some(config) = config {
@@ -53,7 +20,41 @@ impl Create for MyPlugin {
         }
     }
 }
+impl Plugin for MyPlugin {
+    type MODE = MPSC;
+    const NAME: &'static str = "plugin-example";
+    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
+        kokoro::default_impl::init_service!(ctx, "plugin-example", MyService);
+        ctx.subscribe(|ctx: &Context<MyPlugin, _>, s: &Say| println!("{} {}", s.0, ctx.content));
+        Ok(())
+    }
+}
 
-fn sub(ctx: &Context<MyPlugin, MPSC>) {
-    println!("{} {}", ctx.content, MyPlugin::NAME);
+#[derive(Event)]
+pub struct Say(String);
+impl Say {
+    pub fn i<S: Into<String>>(s: S) -> Self {
+        Say(s.into())
+    }
+}
+
+pub trait MyService {
+    fn hello(&self);
+    fn bye(&self);
+}
+impl MyService for MyPlugin {
+    fn hello(&self) {
+        println!("hello {}", self.content);
+    }
+    fn bye(&self) {
+        println!("bye {}", self.content)
+    }
+}
+pub trait SetupMyService {
+    fn my_service(&self) -> Option<Arc<dyn MyService>>;
+}
+impl<R: Resource + 'static, M: Mode> SetupMyService for Context<R, M> {
+    fn my_service(&self) -> Option<Arc<dyn MyService>> {
+        kokoro::default_impl::get_service!(self, "plugin-example", MyService)
+    }
 }
