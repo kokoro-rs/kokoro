@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
 use flume::{unbounded, Receiver, Sender};
 use kokoro_core::context::scope::{Resource, Scope, Triggerable};
 use kokoro_core::context::Context;
@@ -6,6 +8,7 @@ use parking_lot::Mutex;
 use std::sync::Arc;
 use std::thread;
 
+/// Mode MPSC
 pub struct MPSC<R: Resource + 'static = ()> {
     sender: Sender<Arc<dyn Event + Send + Sync>>,
     receiver: Receiver<Arc<dyn Event + Send + Sync>>,
@@ -77,7 +80,9 @@ pub fn default_runner<R: Resource>(ctx: &Context<R, MPSC<R>>) {
     }
 }
 
+/// publish
 pub trait Publishable<E> {
+    /// publish a event
     fn publish(&self, e: E);
 }
 
@@ -91,12 +96,14 @@ impl<R: Resource + 'static, RR: Resource, E: Event + Send + Sync + 'static> Publ
             .expect("can not publish");
     }
 }
+/// Normal channel context
 pub fn channel_ctx() -> Context<(), MPSC> {
     let scope = Scope::create(Arc::new(()));
     let mode = MPSC::<()>::default();
     let ctx = Context::create(Arc::new(scope), Arc::new(mode));
     ctx
 }
+/// Channel context with something
 pub fn channel_ctx_with<R: Resource>(resource: R) -> Context<R, MPSC<R>> {
     let scope = Scope::create(Arc::new(resource));
     let mode = MPSC::<R>::default();

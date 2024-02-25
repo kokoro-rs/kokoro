@@ -20,9 +20,8 @@
 ```rust
 use std::fmt::Display;
 use kokoro::prelude::*;
-struct App;
 fn main() {
-    let ctx = mpsc_context(App);
+    let ctx = channel_ctx();
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher
@@ -60,7 +59,7 @@ fn sub_print(print: &Print) {
 use kokoro::prelude::*;
 
 fn main() -> Result<()> {
-    let ctx = mpsc_context(0u8);
+    let ctx = channel_ctx();
     // let dyp = DynamicPlugin::from_path("path to Plugin (Dynamic link library)"); // Also can do it
     // let dyp = DynamicPlugin::try_from(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)") }); // Also can do it
     let dyp = "path to Plugin (Dynamic link library)"; // String or Library or DynamicPlugin
@@ -89,9 +88,9 @@ struct MyPlugin {
 }
 
 impl Plugin for MyPlugin {
-    type MODE = MPSC<u8>;
+    type MODE = MPSC;
     const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self, MPSC<u8>>) -> Result<()> {
+    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
         ctx.subscribe(sub);
         Ok(())
     }
@@ -108,7 +107,7 @@ impl Create for MyPlugin {
     }
 }
 
-fn sub(ctx: &Context<MyPlugin, MPSC<u8>>) {
+fn sub(ctx: &Context<MyPlugin, MPSC>) {
     println!(
         "{} {}",
         ctx.hello,
