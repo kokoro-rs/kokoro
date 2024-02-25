@@ -1,17 +1,12 @@
 use kokoro::prelude::*;
 use plugin_example::SetupMyService;
-fn main() {
-    let ctx = mpsc_context(0u8);
-    if let Some(service) = ctx.my_service() {
-        service.hello();
-    } else {
-        println!("no service");
-    }
+fn main() -> Result<()> {
+    let ctx = channel_ctx();
     let config = toml::toml! {
         content = "I am plugin"
     };
-    ctx.plugin_dynamic("plugin_dynamic.dll", Some(config.into()))
-        .unwrap();
+    let pf = PluginFinder::new("../../target/release/");
+    ctx.plugin_dynamic(pf.find("plugin_example"), Some(config.into()))?;
     if let Some(service) = ctx.my_service() {
         service.hello();
     } else {
@@ -19,4 +14,5 @@ fn main() {
     }
     ctx.publish(PhantomEvent);
     ctx.run();
+    Ok(())
 }

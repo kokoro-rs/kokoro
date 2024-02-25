@@ -1,6 +1,5 @@
 use kokoro::core::context::scope::Resource;
 use kokoro::default_impl::plugin::anyhow::anyhow;
-use kokoro::default_impl::plugin::Result;
 use kokoro::dynamic_plugin::toml::Value;
 use kokoro::prelude::scope::Mode;
 use kokoro::prelude::*;
@@ -13,9 +12,9 @@ struct MyPlugin {
 }
 
 impl Plugin for MyPlugin {
-    type MODE = MPSC<u8>;
+    type MODE = MPSC;
     const NAME: &'static str = "plugin-example";
-    fn apply(ctx: Context<Self, MPSC<u8>>) -> Result<()> {
+    fn apply(ctx: Context<Self, MPSC>) -> Result<()> {
         ctx.subscribe(sub);
         kokoro::default_impl::init_service!(ctx, "plugin-example", MyService);
         Ok(())
@@ -55,6 +54,6 @@ impl Create for MyPlugin {
     }
 }
 
-fn sub(ctx: &Context<MyPlugin, MPSC<u8>>) {
+fn sub(ctx: &Context<MyPlugin, MPSC>) {
     println!("{} {}", ctx.content, MyPlugin::NAME);
 }

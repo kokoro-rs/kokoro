@@ -154,8 +154,8 @@ pub fn dynamic_plugin(input: TokenStream) -> TokenStream {
             #name::NAME
         }
         #[no_mangle]
-        extern "Rust" fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::Resource,<#name as ::kokoro::prelude::Plugin>::MODE>)-> ::kokoro::default_impl::plugin::Result<()>{
-            #name::apply(unsafe{ ::std::mem::transmute(ctx) })
+        extern "Rust" fn __plugin_apply(ctx: Context<dyn ::kokoro::core::context::scope::Resource,<#name as ::kokoro::default_impl::plugin::Plugin>::MODE>)-> ::kokoro::default_impl::plugin::Result<()>{
+            <#name as ::kokoro::default_impl::plugin::Plugin>::apply(unsafe{ ::std::mem::transmute(ctx) })
         }
     };
 

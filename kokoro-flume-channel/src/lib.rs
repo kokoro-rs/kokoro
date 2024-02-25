@@ -6,7 +6,7 @@ use parking_lot::Mutex;
 use std::sync::Arc;
 use std::thread;
 
-pub struct MPSC<R: Resource + 'static> {
+pub struct MPSC<R: Resource + 'static = ()> {
     sender: Sender<Arc<dyn Event + Send + Sync>>,
     receiver: Receiver<Arc<dyn Event + Send + Sync>>,
     runner: Mutex<RunnerCache<R>>,
@@ -91,7 +91,13 @@ impl<R: Resource + 'static, RR: Resource, E: Event + Send + Sync + 'static> Publ
             .expect("can not publish");
     }
 }
-pub fn mpsc_context<R: Resource>(resource: R) -> Context<R, MPSC<R>> {
+pub fn channel_ctx() -> Context<(), MPSC> {
+    let scope = Scope::create(Arc::new(()));
+    let mode = MPSC::<()>::default();
+    let ctx = Context::create(Arc::new(scope), Arc::new(mode));
+    ctx
+}
+pub fn channel_ctx_with<R: Resource>(resource: R) -> Context<R, MPSC<R>> {
     let scope = Scope::create(Arc::new(resource));
     let mode = MPSC::<R>::default();
     let ctx = Context::create(Arc::new(scope), Arc::new(mode));

@@ -8,9 +8,10 @@ use kokoro_core::context::{
 };
 use kokoro_default_impl::plugin::{anyhow::Error, Result, ScopeIdGen};
 pub use libloading;
-use libloading::{Library, Symbol};
+use libloading::{library_filename, Library, Symbol};
 use rand::rngs::mock::StepRng;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
+use std::path::Path;
 use std::sync::Arc;
 pub use toml;
 use toml::value::Value;
@@ -137,6 +138,11 @@ impl<M: Mode + 'static> From<&OsStr> for IntoDynamicPlugin<M> {
         IntoDynamicPlugin(DynamicPlugin::from_path(value))
     }
 }
+impl<M: Mode + 'static> From<OsString> for IntoDynamicPlugin<M> {
+    fn from(value: OsString) -> Self {
+        IntoDynamicPlugin(DynamicPlugin::from_path(value))
+    }
+}
 impl<M: Mode + 'static> From<String> for IntoDynamicPlugin<M> {
     fn from(value: String) -> Self {
         IntoDynamicPlugin(DynamicPlugin::from_path(value))
@@ -180,5 +186,29 @@ impl<R: Resource + 'static, M: Mode + 'static> DynamicPluginable<R, M> for Conte
         // plugin.dyn_apply(&self.with(Arc::clone(&scope)));
         self.scope().subscopes().insert(id.clone(), Box::new(scope));
         Ok(id)
+    }
+}
+
+/// Automatically concatenate paths
+pub struct PluginFinder<'p> {
+    super_path: &'p Path,
+}
+impl<'p> PluginFinder<'p> {
+    /// Create a PluginFinder
+    pub fn new<S: AsRef<OsStr> + ?Sized>(path: &'p S) -> Self {
+        Self {
+            super_path: Path::new(path),
+        }
+    }
+    /// Find a plugin as file_path
+    pub fn find<S: AsRef<OsStr>>(&self, name: S) -> OsString {
+        let name = library_filename(name);
+        self.super_path.join(name).as_os_str().into()
+    }
+    /// Find from path
+    pub fn find_from<S: AsRef<Path>, N: AsRef<OsStr>>(&self, path: S, name: N) -> OsString {
+        let path = self.super_path.join(path);
+        let name = library_filename(name);
+        path.join(name).as_os_str().into()
     }
 }
