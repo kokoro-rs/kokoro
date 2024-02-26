@@ -46,7 +46,7 @@ let scope = Scope::create(Arc::new(MyStruct));
 let context = Context::create(Arc::new(scope), Arc::new(Global));
 ```
 
-当 `Context` 当中的 `Global` 用于携带 `Context` 自身扩展中所需要的类型实力。
+当 `Context` 当中的 `Global` 用于携带 `Context` 自身扩展中所需要的类型实例。
 
 就像 `kokoro-flume-channel` 中的 `MPSC` 存储了 `sender`，`receiver` 和 `runner` 一样。
 
