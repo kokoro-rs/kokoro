@@ -64,13 +64,13 @@ fn main() -> Result<()> {
     // let dyp = DynamicPlugin::try_from(unsafe { libloading::Library::new("path to Plugin (Dynamic link library)") }); // Also can do it
     let dyp = "path to Plugin (Dynamic link library)"; // String or Library or DynamicPlugin
     let config = toml::toml! {
-        content = "I am plugin"
+        hello = "I am plugin"
     };
     ctx.plugin_dynamic(dyp, Some(content.into()))?;
     ctx.publish(PhantomEvent);
     ctx.run();
     /* Typically, the output will be :
-     *  Hello from plugin plugin-example
+     *  I am plugin plugin-example
     */
     Ok(())
 }
