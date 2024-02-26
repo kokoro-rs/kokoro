@@ -31,7 +31,7 @@ impl MyStruct {
         println!("Kokoro yyds");
     }
 }
-context.with(Arc::new(Scope::create(Arc::new(MyStruct))));
+let context = context.with(Arc::new(Scope::create(Arc::new(MyStruct))));
 context.hello_kokoro();
 ```
 
