@@ -15,6 +15,12 @@
 
 <br/>
 
+**下面的内容有些老旧了，但是 example 都是正确的**
+
+**如果你懂得中文，并且想要了解这个仓库到底是什么东西，请查看以下 Markdown**
+
+[关于 Kokoro-core](https://github.com/kokoro-rs/kokoro/blob/main/%E5%85%B3%E4%BA%8E%20Kokoro-core.md)
+
 ## Simple publish/subscribe
 
 ```rust
