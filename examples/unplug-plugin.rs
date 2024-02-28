@@ -1,7 +1,7 @@
 use kokoro::prelude::*;
 fn main() -> Result<()> {
     let ctx = channel_ctx();
-    for _ in 0..=1000000 {
+    for _ in 0..=1000 {
         let id = ctx.plugin(Test)?;
         ctx.unplug(id);
     }
