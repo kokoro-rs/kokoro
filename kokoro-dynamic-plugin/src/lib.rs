@@ -109,13 +109,6 @@ pub trait Create: Sized {
     fn create(config: Option<Value>) -> Result<Self>;
 }
 
-/// Provide Context with the ability to dynamically load plugins
-pub trait DynamicPluginable<R: Resource, M: Mode + 'static> {
-    /// Dynamically loading plugins
-    fn plugin_dynamic<DyP>(&self, dyplugin: DyP, config: Option<Value>) -> Result<ScopeId>
-    where
-        DyP: Into<IntoDynamicPlugin<M>>;
-}
 /// into dynamic plugin
 pub struct IntoDynamicPlugin<M: Mode + 'static>(pub Result<DynamicPlugin<M>>);
 impl<M: Mode + 'static> From<Result<DynamicPlugin<M>>> for IntoDynamicPlugin<M> {
@@ -161,7 +154,22 @@ impl<M: Mode + 'static> From<Result<Library, libloading::Error>> for IntoDynamic
         }
     }
 }
-
+/// Provide Context with the ability to dynamically load plugins
+pub trait DynamicPluginable<R: Resource, M: Mode + 'static> {
+    /// Dynamically loading plugin
+    fn plugin_dynamic<DyP>(&self, dyplugin: DyP, config: Option<Value>) -> Result<ScopeId>
+    where
+        DyP: Into<IntoDynamicPlugin<M>>;
+    /// Insert a plugin
+    fn insert_plugin_dynamic<DyP>(
+        &self,
+        dyplugin: DyP,
+        config: Option<Value>,
+        id: ScopeId,
+    ) -> Result<()>
+    where
+        DyP: Into<IntoDynamicPlugin<M>>;
+}
 impl<R: Resource + 'static, M: Mode + 'static> DynamicPluginable<R, M> for Context<R, M> {
     #[inline(always)]
     fn plugin_dynamic<DyP>(&self, dyplugin: DyP, config: Option<Value>) -> Result<ScopeId>
@@ -175,17 +183,29 @@ impl<R: Resource + 'static, M: Mode + 'static> DynamicPluginable<R, M> for Conte
             .default("kokoro-plugin-impl/scope_id_gen", || {
                 Arc::new(ScopeIdGen::new(StepRng::new(0, 1)))
             });
-        let plugin = dyplugin.create(config)?;
         let name: &'static str = dyplugin.name();
+        let id = scope_id_gen.next(name);
+        self.insert_plugin_dynamic(dyplugin, config, id.clone())?;
+        Ok(id)
+    }
+    fn insert_plugin_dynamic<DyP>(
+        &self,
+        dyplugin: DyP,
+        config: Option<Value>,
+        id: ScopeId,
+    ) -> Result<()>
+    where
+        DyP: Into<IntoDynamicPlugin<M>>,
+    {
+        let dyplugin = dyplugin.into().0?;
+        let plugin = dyplugin.create(config)?;
         let scope = Arc::new(Scope::create(plugin));
         dyplugin.apply(self.with(Arc::clone(&scope)))?;
-        let id = scope_id_gen.next(name);
         scope
             .cache()
             .insert("kokoro-dynamic-plugin/lib-cache", Arc::new(dyplugin));
-        // plugin.dyn_apply(&self.with(Arc::clone(&scope)));
         self.scope().subscopes().insert(id.clone(), Box::new(scope));
-        Ok(id)
+        Ok(())
     }
 }
 

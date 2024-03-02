@@ -1,14 +1,14 @@
+use crate::context::scope::Mode;
 use crate::{
     context::{scope::Resource, Context},
     event::*,
 };
 use std::marker::PhantomData;
-use crate::context::scope::Mode;
 
 /// Abstract subscriber
 pub trait Subscriber<Et, R: Resource + ?Sized, M: Mode>
-    where
-        Et: 'static + Send + Sync,
+where
+    Et: 'static + Send + Sync,
 {
     /// Run the subscriber
     #[inline(always)]
@@ -24,8 +24,8 @@ pub trait Subscriber<Et, R: Resource + ?Sized, M: Mode>
 }
 
 impl<F, R: Resource, M: Mode> Subscriber<(), R, M> for F
-    where
-        F: FnMut() + 'static,
+where
+    F: FnMut() + 'static,
 {
     #[inline(always)]
     unsafe fn run_uncheck(&mut self, _: &dyn Event, _: &Context<R, M>) {
@@ -43,9 +43,9 @@ impl<F, R: Resource, M: Mode> Subscriber<(), R, M> for F
 }
 
 impl<F, Et, R: Resource, M: Mode> Subscriber<Et, R, M> for F
-    where
-        F: FnMut(&Et) + 'static,
-        Et: EventID + 'static + Send + Sync,
+where
+    F: FnMut(&Et) + 'static,
+    Et: EventID + 'static + Send + Sync,
 {
     #[inline(always)]
     unsafe fn run_uncheck(&mut self, e: &dyn Event, _: &Context<R, M>) {
@@ -63,8 +63,8 @@ impl<F, Et, R: Resource, M: Mode> Subscriber<Et, R, M> for F
 }
 
 impl<F, R: Resource + 'static, M: Mode + 'static> Subscriber<Context<R, M>, R, M> for F
-    where
-        F: FnMut(&Context<R, M>) + 'static,
+where
+    F: FnMut(&Context<R, M>) + 'static,
 {
     #[inline(always)]
     unsafe fn run_uncheck(&mut self, _: &dyn Event, ctx: &Context<R, M>) {
@@ -83,9 +83,9 @@ impl<F, R: Resource + 'static, M: Mode + 'static> Subscriber<Context<R, M>, R, M
 }
 
 impl<F, Et, R: Resource + 'static, M: Mode + 'static> Subscriber<(Context<R, M>, Et), R, M> for F
-    where
-        F: FnMut(&Context<R, M>, &Et) + 'static,
-        Et: EventID + 'static + Send + Sync,
+where
+    F: FnMut(&Context<R, M>, &Et) + 'static,
+    Et: EventID + 'static + Send + Sync,
 {
     #[inline(always)]
     unsafe fn run_uncheck(&mut self, e: &dyn Event, ctx: &Context<R, M>) {
@@ -105,9 +105,9 @@ impl<F, Et, R: Resource + 'static, M: Mode + 'static> Subscriber<(Context<R, M>,
 
 /// Wrapper for storing subscribers
 pub struct SubscriberCache<Sub, Et, R: Resource + ?Sized, M: Mode>
-    where
-        Sub: Subscriber<Et, R, M>,
-        Et: 'static + Send + Sync,
+where
+    Sub: Subscriber<Et, R, M>,
+    Et: 'static + Send + Sync,
 {
     inner: Sub,
     _et: PhantomData<Et>,
@@ -116,9 +116,9 @@ pub struct SubscriberCache<Sub, Et, R: Resource + ?Sized, M: Mode>
 }
 
 impl<Sub, Et, R: Resource + ?Sized, M: Mode> SubscriberCache<Sub, Et, R, M>
-    where
-        Sub: Subscriber<Et, R, M>,
-        Et: 'static + Send + Sync,
+where
+    Sub: Subscriber<Et, R, M>,
+    Et: 'static + Send + Sync,
 {
     /// Wrap a subscriber
     #[inline(always)]
@@ -145,9 +145,9 @@ pub trait ISubscriber<R: Resource + ?Sized, M: Mode> {
 }
 
 impl<Sub, Et, R: Resource + ?Sized, M: Mode> ISubscriber<R, M> for SubscriberCache<Sub, Et, R, M>
-    where
-        Sub: Subscriber<Et, R, M>,
-        Et: 'static + Send + Sync,
+where
+    Sub: Subscriber<Et, R, M>,
+    Et: 'static + Send + Sync,
 {
     #[inline(always)]
     fn run(&mut self, e: &dyn Event, ctx: &Context<R, M>) {
