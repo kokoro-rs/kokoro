@@ -21,6 +21,8 @@
 
 [关于 Kokoro-core](https://github.com/kokoro-rs/kokoro/blob/main/%E5%85%B3%E4%BA%8E%20Kokoro-core.md)
 
+[关于发布-订阅模式](https://github.com/kokoro-rs/kokoro/blob/main/%E5%85%B3%E4%BA%8E%E5%8F%91%E5%B8%83-%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F.md)
+
 ## Simple publish/subscribe
 
 ```rust
