@@ -14,3 +14,5 @@ pub mod event;
 pub mod schedule;
 /// Subscribers, which are executed when a message is received
 pub mod subscriber;
+
+pub mod query;

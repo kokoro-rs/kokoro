@@ -1,1 +1,0 @@
-./kokoro-core/README.md

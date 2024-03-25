@@ -1,4 +1,5 @@
 use kokoro::prelude::*;
+use kokoro_core::query::EventQuery;
 use std::fmt::Display;
 fn main() {
     let ctx = channel_ctx();
@@ -25,6 +26,6 @@ fn main() {
 struct Print(&'static dyn Display);
 
 // This is a subscriber who subscribes to the event:Print
-fn sub_print(print: &Print) {
+fn sub_print(print: EventQuery<Print>) {
     println!("{}", print.0);
 }

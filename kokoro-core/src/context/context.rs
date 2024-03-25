@@ -1,7 +1,7 @@
 use super::scope::{Mode, Resource, Scope};
 use crate::context::scope::DynamicCache;
 use crate::disposable::DisposableHandle;
-use crate::schedule::{Schedule, WithNoneList, AROBS};
+use crate::schedule::{Schedule, SubscriberHandle};
 use crate::subscriber::Subscriber;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -13,7 +13,7 @@ pub struct Context<R: Resource + ?Sized, M: Mode + 'static> {
     global_cache: Arc<DynamicCache>,
 }
 
-impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
+impl<'a, R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     /// Create a new Context
     #[inline(always)]
     pub fn create(scope: Arc<Scope<R, M>>, global: Arc<M>) -> Self {
@@ -57,10 +57,14 @@ impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     }
     /// Register a subscriber for the main channel
     #[inline(always)]
-    pub fn subscribe<Sub, Et>(&self, sub: Sub) -> DisposableHandle<WithNoneList<AROBS<R, M>, R, M>>
+    pub fn subscribe<Sub, const N: usize, Q, E>(
+        &self,
+        sub: Sub,
+    ) -> DisposableHandle<SubscriberHandle<R, M>>
     where
-        Sub: Subscriber<Et, R, M> + 'static + Send + Sync,
-        Et: 'static + Sync + Send,
+        Sub: Subscriber<N, Q, E, R, M> + 'static + Send + Sync,
+        Q: 'static + Sync + Send,
+        E: 'static + Send + Sync,
     {
         DisposableHandle::new(self.schedule().insert(sub))
     }

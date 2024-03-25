@@ -87,11 +87,7 @@ pub trait Triggerable<M: Mode> {
     /// All the subscribers triggered the current scope
     fn trigger(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn Resource, M>);
     /// Recursively triggers all subscribers of the current scope and descendant scope
-    fn trigger_recursive(
-        &self,
-        e: Arc<dyn Event + Send + Sync>,
-        ctx: &Context<dyn Resource, M>,
-    );
+    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn Resource, M>);
 }
 
 impl<M: Mode> Resource for dyn Triggerable<M> + Send + Sync {}
@@ -106,11 +102,7 @@ impl<R: Resource + ?Sized + 'static, M: Mode> Triggerable<M> for Arc<Scope<R, M>
         self.schedule().trigger(e, &ctx.with(Arc::clone(&self)));
     }
     #[inline(always)]
-    fn trigger_recursive(
-        &self,
-        e: Arc<dyn Event + Send + Sync>,
-        ctx: &Context<dyn Resource, M>,
-    ) {
+    fn trigger_recursive(&self, e: Arc<dyn Event + Send + Sync>, ctx: &Context<dyn Resource, M>) {
         let ps = self.subscopes();
         ps.par_iter().for_each(|p| {
             let e = Arc::clone(&e);
