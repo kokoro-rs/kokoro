@@ -201,6 +201,7 @@ version = "0.0.4"
 dependencies = [
  "flume",
  "kokoro-core",
+ "kokoro-default-impl",
  "parking_lot",
 ]
 

@@ -20,3 +20,7 @@ parking_lot = "^0.12.1"
 [dependencies.kokoro-core]
 path = "../kokoro-core"
 version = "^0.0.6"
+
+[dependencies.kokoro-default-impl]
+path = "../kokoro-default-impl"
+version = "^0.0.6"

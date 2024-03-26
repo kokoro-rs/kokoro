@@ -3,7 +3,9 @@
 use flume::{unbounded, Receiver, Sender};
 use kokoro_core::context::scope::{Resource, Scope, Triggerable};
 use kokoro_core::context::Context;
+use kokoro_core::disposable::DisposableHandle;
 use kokoro_core::event::Event;
+use kokoro_default_impl::thread::*;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use std::thread;
@@ -29,7 +31,9 @@ impl<R: Resource> Default for MPSC<R> {
 }
 
 /// Runner wrapper
-pub struct RunnerCache<R: Resource + 'static>(Box<dyn FnMut(&Context<R, MPSC<R>>) + 'static>);
+pub struct RunnerCache<R: Resource + 'static>(
+    Box<dyn FnMut(&Context<R, MPSC<R>>, Arc<dyn Event + Send + Sync>) + 'static>,
+);
 
 unsafe impl<R: Resource> Send for RunnerCache<R> {}
 
@@ -40,7 +44,7 @@ impl<R: Resource> RunnerCache<R> {
     #[inline(always)]
     pub fn new<F>(runner: F) -> Self
     where
-        F: FnMut(&Context<R, MPSC<R>>) + 'static,
+        F: FnMut(&Context<R, MPSC<R>>, Arc<dyn Event + Send + Sync>) + 'static,
     {
         Self(Box::new(runner))
     }
@@ -49,35 +53,61 @@ impl<R: Resource> RunnerCache<R> {
 /// That can be run by a runner
 pub trait Runnable {
     /// Register a runner
-    fn runner<F: FnMut(&Self) + 'static>(&self, runner: F);
+    fn runner<F: FnMut(&Self, Arc<dyn Event + Send + Sync>) + 'static>(&self, runner: F);
     /// Utility runner run context
-    fn run(&self);
+    fn run(&self) -> DisposableHandle<ThreadHandle<()>>;
+    fn run_sync(&self);
+    fn next(&self);
+    fn try_next(&self);
 }
 
 impl<R: Resource> Runnable for Context<R, MPSC<R>> {
     #[inline(always)]
-    fn runner<F: FnMut(&Context<R, MPSC<R>>) + 'static>(&self, runner: F) {
+    fn runner<F: FnMut(&Context<R, MPSC<R>>, Arc<dyn Event + Send + Sync>) + 'static>(
+        &self,
+        runner: F,
+    ) {
         self.global().runner.lock().0 = Box::new(runner);
     }
     #[inline(always)]
-    fn run(&self) {
-        self.global().runner.lock().0(self);
+    #[must_use]
+    fn run(&self) -> DisposableHandle<ThreadHandle<()>> {
+        self.spawn(|ctx, s| {
+            for t in s {
+                if !t {
+                    ctx.next();
+                }
+            }
+        })
+    }
+    fn run_sync(&self) {
+        for e in &self.global().receiver {
+            self.global().runner.lock().0(self, e);
+        }
+    }
+    fn next(&self) {
+        if let Ok(e) = &self.global().receiver.recv() {
+            self.global().runner.lock().0(self, Arc::clone(e));
+        }
+    }
+    fn try_next(&self) {
+        if let Ok(e) = &self.global().receiver.try_recv() {
+            self.global().runner.lock().0(self, Arc::clone(e));
+        }
     }
 }
 
 /// The default runner
-pub fn default_runner<R: Resource>(ctx: &Context<R, MPSC<R>>) {
-    for e in &ctx.global().receiver {
-        let ctx = ctx.with(ctx.scope());
-        thread::Builder::new()
-            .name("main loop thread".to_string())
-            .spawn(move || {
-                ctx.scope().trigger_recursive(Arc::clone(&e), unsafe {
-                    &*(&ctx as *const Context<R, MPSC<R>> as *const Context<dyn Resource, MPSC<R>>)
-                })
+pub fn default_runner<R: Resource>(ctx: &Context<R, MPSC<R>>, e: Arc<dyn Event + Send + Sync>) {
+    let ctx = ctx.with(ctx.scope());
+    thread::Builder::new()
+        .name("main loop thread".to_string())
+        .spawn(move || {
+            ctx.scope().trigger_recursive(e, unsafe {
+                &*(&ctx as *const Context<R, MPSC<R>> as *const Context<dyn Resource, MPSC<R>>)
             })
-            .expect("main loop thread can not spawn");
-    }
+        })
+        .expect("main loop thread can not spawn");
 }
 
 /// publish

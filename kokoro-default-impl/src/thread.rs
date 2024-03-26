@@ -1,12 +1,13 @@
+use kokoro_core::context::scope::Mode;
 use kokoro_core::{
     context::{scope::Resource, Context},
     disposable::{Disposable, DisposableHandle},
 };
+use std::sync::atomic::Ordering;
 use std::{
     sync::{atomic::AtomicBool, Arc},
     thread::{self, Builder, JoinHandle},
 };
-use kokoro_core::context::scope::Mode;
 
 /// Spawn threads for the Context
 pub trait ThreadContext {
@@ -53,59 +54,76 @@ impl<T: Resource + 'static, M: Mode + 'static> ThreadContext for Context<T, M> {
 }
 
 /// A handle used to dispose of a thread
-pub struct ThreadHandle<T>(pub JoinHandle<T>, pub SignalHandle);
+pub struct ThreadHandle<T>(pub Option<JoinHandle<T>>, pub SignalHandle);
 
 impl<T> ThreadHandle<T> {
     #[inline(always)]
     fn new(join_handle: JoinHandle<T>, signal_handle: SignalHandle) -> Self {
-        Self(join_handle, signal_handle)
+        Self(Some(join_handle), signal_handle)
     }
     #[inline(always)]
-    fn yes(&self) {
-        self.1.yes()
+    fn done(&self) {
+        self.1.done()
     }
     #[inline(always)]
-    fn end(self) {
-        self.yes();
-        self.0.join().unwrap();
+    fn done_join(&mut self) {
+        self.done();
+        if let Some(handle) = self.0.take() {
+            handle.join().unwrap();
+        }
     }
 }
 
 /// A handle used to pass a single signal
-pub struct SignalHandle(Arc<AtomicBool>);
+pub struct SignalHandle {
+    single: Arc<AtomicBool>,
+    stopped: Arc<AtomicBool>,
+}
 
 impl SignalHandle {
     /// Creates a handle for passing a single signal
     #[inline(always)]
     pub fn new() -> Self {
-        Self(Arc::new(AtomicBool::new(false)))
+        Self {
+            single: Arc::new(AtomicBool::new(true)),
+            stopped: Arc::new(AtomicBool::new(false)),
+        }
     }
-    /// If the signal is true
-    #[inline(always)]
-    pub fn is(&self) -> bool {
-        unsafe { *self.0.as_ptr() }
-    }
-    /// Set the signal to true
-    #[inline(always)]
-    pub fn yes(&self) {
-        unsafe { *(self.0.as_ptr()) = true }
-    }
-    /// Set the signal to false
-    #[inline(always)]
-    pub fn no(&self) {
-        unsafe { *(self.0.as_ptr()) = false }
+    /// Set done
+    pub fn done(&self) {
+        self.single.store(false, Ordering::Relaxed);
     }
 }
 
 impl Clone for SignalHandle {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        Self {
+            single: Arc::clone(&self.single),
+            stopped: Arc::clone(&self.stopped),
+        }
     }
 }
 
-impl Disposable for ThreadHandle<()> {
+impl Iterator for SignalHandle {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.stopped.load(Ordering::Relaxed) {
+            None
+        } else {
+            thread::yield_now();
+            let signal = !self.single.load(Ordering::Relaxed);
+            if signal {
+                self.stopped.store(true, Ordering::Relaxed);
+            }
+            Some(signal)
+        }
+    }
+}
+
+impl<T> Disposable for ThreadHandle<T> {
     #[inline(always)]
-    fn dispose(self) {
-        self.end()
+    unsafe fn dispose(&mut self) {
+        self.done_join();
     }
 }

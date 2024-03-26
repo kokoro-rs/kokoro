@@ -6,22 +6,18 @@ fn main() {
     // Register a subscriber
     ctx.subscribe(sub_print);
     // Create a publisher
-    let handle = ctx.spawn(|ctx, s| {
+    let handle0 = ctx.spawn(|ctx, s| {
         // when thread should be terminated
-        for t in s {
+        for () in s {
             // Publish the event:Print
-            if t {
-                println!("Bye")
-            }
             ctx.publish(Print(&"Hello World"));
             std::thread::sleep(std::time::Duration::from_secs(1));
         }
     });
-    ctx.add_disposable(handle);
-    let handle = ctx.run();
-    ctx.add_disposable(handle);
+    let handle1 = ctx.run();
     thread::sleep(Duration::from_secs(5));
-    dispose(ctx);
+    dispose(handle1);
+    dispose(handle0);
     /* Typically, the output will be :
      *  Hello World
      *  ...

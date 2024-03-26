@@ -1,7 +1,7 @@
 /// What can be disposed of
 pub trait Disposable {
     /// Dispose of it
-    fn dispose(self);
+    unsafe fn dispose(&mut self);
 }
 /// Used to wrap what can be disposed of
 pub struct DisposableHandle<D: Disposable>(D);
@@ -12,14 +12,30 @@ impl<D: Disposable> DisposableHandle<D> {
         Self(disposable)
     }
 }
+pub struct DisposableCache(Box<dyn Disposable + Send + Sync>);
+impl Disposable for DisposableCache {
+    unsafe fn dispose(&mut self) {
+        unsafe { self.0.dispose() }
+    }
+}
+impl DisposableCache {
+    pub fn warp<D: Disposable + Send + Sync + 'static>(disposable: D) -> Self {
+        Self(Box::new(disposable))
+    }
+}
+
 impl<D: Disposable> Disposable for DisposableHandle<D> {
-    fn dispose(self) {
+    unsafe fn dispose(&mut self) {
         self.0.dispose()
     }
 }
 /// Dispose of something
 pub fn dispose<D: Disposable>(disposable: D) {
-    disposable.dispose()
+    #[allow(invalid_reference_casting)]
+    unsafe {
+        (&mut *(&disposable as *const D as *mut D)).dispose()
+    }
+    drop(disposable)
 }
 #[cfg(feature = "nightly")]
 impl<D: Disposable> FnOnce<()> for DisposableHandle<D> {

@@ -1,8 +1,10 @@
 use super::scope::{Mode, Resource, Scope};
 use crate::context::scope::DynamicCache;
-use crate::disposable::DisposableHandle;
+use crate::disposable::{dispose, Disposable, DisposableCache, DisposableHandle};
 use crate::schedule::{Schedule, SubscriberHandle};
 use crate::subscriber::Subscriber;
+use parking_lot::Mutex;
+use rayon::prelude::*;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -11,9 +13,10 @@ pub struct Context<R: Resource + ?Sized, M: Mode + 'static> {
     scope: Arc<Scope<R, M>>,
     global: Arc<M>,
     global_cache: Arc<DynamicCache>,
+    disposals: Arc<Mutex<Vec<DisposableCache>>>,
 }
 
-impl<'a, R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
+impl<R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     /// Create a new Context
     #[inline(always)]
     pub fn create(scope: Arc<Scope<R, M>>, global: Arc<M>) -> Self {
@@ -21,6 +24,7 @@ impl<'a, R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
             scope,
             global,
             global_cache: Arc::new(DynamicCache::new()),
+            disposals: Arc::new(Mutex::new(Vec::new())),
         }
     }
     /// Get the scope of the Context
@@ -35,6 +39,7 @@ impl<'a, R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
             scope,
             global: self.global.clone(),
             global_cache: Arc::clone(&self.global_cache),
+            disposals: Arc::clone(&self.disposals),
         }
     }
     /// Gets the schedule of the node in the current scope.
@@ -55,6 +60,11 @@ impl<'a, R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     pub fn cache(&self) -> &DynamicCache {
         &self.global_cache
     }
+    #[inline(always)]
+    pub fn add_disposable<D: Disposable + Send + Sync + 'static>(&self, disposable: D) {
+        let cache = DisposableCache::warp(disposable);
+        self.disposals.lock().push(cache);
+    }
     /// Register a subscriber for the main channel
     #[inline(always)]
     pub fn subscribe<Sub, const N: usize, Q, E>(
@@ -72,6 +82,14 @@ impl<'a, R: Resource + ?Sized + 'static, M: Mode> Context<R, M> {
     #[inline(always)]
     pub fn dynref(&self) -> &Context<dyn Resource, M> {
         unsafe { &*(self as *const Context<R, M> as *const Context<dyn Resource, M>) }
+    }
+}
+
+impl<R: Resource + ?Sized + 'static, M: Mode> Disposable for Context<R, M> {
+    unsafe fn dispose(&mut self) {
+        while let Some(handle) = self.disposals.lock().pop() {
+            dispose(handle)
+        }
     }
 }
 

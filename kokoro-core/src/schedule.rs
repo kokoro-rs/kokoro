@@ -56,7 +56,7 @@ impl<R: Resource + Send + Sync + ?Sized + 'static, M: Mode> Schedule<R, M> {
 }
 impl<R: Resource + ?Sized, M> Disposable for SubscriberHandle<R, M> {
     #[inline(always)]
-    fn dispose(self) {
+    unsafe fn dispose(&mut self) {
         self.0.remove(&self.1);
     }
 }
