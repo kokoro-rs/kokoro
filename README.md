@@ -1,5 +1,6 @@
 <div align="center" alt="Kokoro">
   <a href="https://www.kokoro-rs.dev"><img src="https://github.com/BERADQ/kokoro-rs/assets/78293733/57a6178e-186f-4526-8ff9-52dd88712daa"></img></a>
+
   [![docs.rs](https://img.shields.io/docsrs/kokoro)](https://docs.rs/kokoro/latest/kokoro/)
   [![Crates.io Version](https://img.shields.io/crates/v/kokoro)](https://crates.io/crates/kokoro)
   ![Crates.io License](https://img.shields.io/crates/l/kokoro)
