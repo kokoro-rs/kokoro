@@ -4,7 +4,7 @@
   [![Crates.io Version](https://img.shields.io/crates/v/kokoro)](https://crates.io/crates/kokoro)
   ![Crates.io License](https://img.shields.io/crates/l/kokoro)
   
-  Kokoro is a Rust-based meta-framework that prioritizes memory safety, performance, and stability to empower the creation of highly decoupled applications.
+  <p>Kokoro is a Rust-based meta-framework that prioritizes memory safety, performance, and stability to empower the creation of highly decoupled applications.</p>
 
 </div>
 
