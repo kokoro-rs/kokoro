@@ -23,6 +23,52 @@
 ## Getting Started
 
 [官网](https://www.kokoro-rs.dev)
+todo
+
+## Demo
+
+```rust
+use kokoro::{dynamic_plugin::toml::toml, prelude::*};
+use kokoro_plugin_tiny_http_event::{http::Response, *};
+
+fn main() -> Result<()> {
+    // Create a context for the channel.
+    let ctx = channel_ctx();
+    // Initialize a new PluginFinder to search for plugins in the "./plugin" directory.
+    let pf = PluginFinder::new("./plugin");
+    // Find the "kokoro_plugin_tiny_http" plugin.
+    let plugin = pf.find("kokoro_plugin_tiny_http");
+    // Define the configuration for the plugin using TOML format.
+    let config = toml! {
+        host = "0.0.0.0" // The host address where the server will listen.
+        port = 1145      // The port number for the server.
+    };
+    // Load the plugin dynamically with the specified configuration.
+    ctx.plugin_dynamic(plugin, Some(config.into()))?;
+    // Subscribe to the 'hello' event.
+    ctx.subscribe(hello);
+    // Run the context synchronously.
+    ctx.run_sync();
+
+    // Return Ok if everything executes successfully.
+    Ok(())
+}
+
+// Define a new Path named 'Hello' targeting the "/hello" endpoint.
+path!(Hello, "/hello");
+// Define the 'hello' function to handle requests to the 'Hello' path.
+fn hello(req: PathQuery<Hello>) {
+    // Check if there is a request and take ownership of it.
+    if let Some(req) = req.take() {
+        // Respond to the request with a "Hello World!" message.
+        req.respond(Response::from_string("Hello World!")).unwrap();
+    }
+}
+
+```
+
+This code sets up a simple HTTP server that responds with “Hello World!” when the “/hello” path is accessed.
+It uses the tiny_http plugin for handling HTTP events.
 
 ## Star History
 
