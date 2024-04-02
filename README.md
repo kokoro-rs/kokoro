@@ -87,7 +87,7 @@ It uses the tiny_http plugin for handling HTTP events.
 - [x] `kokoro-default-impl`
   - [x] `kokoro-plugin-impl`
   - [x] `kokoro-thread-impl`
-  - [x] `kokoro-service-impl (AOP Support)`
+  - [x] `kokoro-service-impl`
 - [x] `kokoro-dynamic-plugin-impl`
 - [x] plugin config api
 - [ ] `loader` for dynamically and schematically loading plugins.
