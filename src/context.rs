@@ -56,7 +56,7 @@ impl<T: 'static + Send + Sync + StableAny> Avails<T> {
     }
     pub fn remove<Param, Func>(
         &self,
-        id: &AvailHandle<T, Param, Func>,
+        id: AvailHandle<T, Param, Func>,
     ) -> Option<Box<dyn Avail<T> + 'static>>
     where
         Param: Params<T> + 'static,

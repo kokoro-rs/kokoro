@@ -8,7 +8,7 @@ fn main() {
     ctx.avails.add(hello);
     ctx.avails.run_all(&ctx);
     let mut func = ctx.avails.get(&p1).unwrap();
-    drop(ctx.avails.remove(&p1));
+    drop(ctx.avails.remove(p1));
     // BUG! undefined behaviour
     func.run(&ctx);
     let p2 = ctx.avails.add(print);
