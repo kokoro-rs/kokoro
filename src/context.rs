@@ -7,11 +7,11 @@ use rand::rngs::mock::StepRng;
 use rand::Rng;
 use rayon::prelude::*;
 
-use crate::any::StableAny;
+use crate::any::IStableAny;
 use crate::avail::{Avail, Availed, Params};
 
 pub struct Avails<T: ?Sized>(DashMap<u128, Box<dyn Avail<T>>>, Mutex<StepRng>);
-pub struct AvailHandle<T: StableAny, Param: Params<T>, Func: FnMut<Param, Output = ()>>(
+pub struct AvailHandle<T: IStableAny, Param: Params<T>, Func: FnMut<Param, Output = ()>>(
     pub u128,
     PhantomData<T>,
     PhantomData<Param>,
@@ -22,7 +22,7 @@ impl<T> From<DashMap<u128, Box<dyn Avail<T>>>> for Avails<T> {
         Self(value, StepRng::new(0, 1).into())
     }
 }
-impl<T: StableAny, Param: Params<T>, Func: FnMut<Param, Output = ()>>
+impl<T: IStableAny, Param: Params<T>, Func: FnMut<Param, Output = ()>>
     From<AvailHandle<T, Param, Func>> for u128
 {
     fn from(value: AvailHandle<T, Param, Func>) -> Self {
@@ -30,7 +30,7 @@ impl<T: StableAny, Param: Params<T>, Func: FnMut<Param, Output = ()>>
     }
 }
 
-impl<T: 'static + Send + Sync + StableAny> Avails<T> {
+impl<T: 'static + Send + Sync + IStableAny> Avails<T> {
     pub fn add<Param, Func, A: Into<Availed<T, Param, Func>>>(
         &self,
         avail: A,
@@ -43,16 +43,6 @@ impl<T: 'static + Send + Sync + StableAny> Avails<T> {
         let id = id | &self.1.lock().unwrap().gen();
         self.0.insert(id, Box::new(avail.into()));
         AvailHandle(id, PhantomData, PhantomData, PhantomData)
-    }
-    pub fn get<'a, Param, Func>(
-        &'a self,
-        id: &'a AvailHandle<T, Param, Func>,
-    ) -> Option<dashmap::mapref::one::RefMut<'a, u128, Box<(dyn Avail<T> + 'a)>>>
-    where
-        Param: Params<T> + 'static,
-        Func: FnMut<Param, Output = ()> + 'static,
-    {
-        unsafe { std::mem::transmute(self.0.get_mut(&id.0)) }
     }
     pub fn remove<Param, Func>(
         &self,
@@ -71,21 +61,23 @@ impl<T: 'static + Send + Sync + StableAny> Avails<T> {
     }
 }
 
-pub struct Children(DashMap<u64, Arc<Context<dyn StableAny>>>, Mutex<StepRng>);
+pub struct Children(DashMap<u64, Arc<Context<dyn IStableAny>>>, Mutex<StepRng>);
 impl Children {
     pub fn new() -> Self {
         Self(DashMap::new(), StepRng::new(0, 1).into())
     }
-    pub fn add<T: StableAny>(&self, child: Arc<Context<T>>) -> ChildHandle<T> {
+    pub fn add<T: IStableAny>(&self, child: Arc<Context<T>>) -> ChildHandle<T> {
         let id = self.1.lock().unwrap().gen();
-        self.0.insert(id, unsafe { std::mem::transmute(child) });
+        self.0.insert(
+            id,
+            Arc::clone(unsafe { &*(&child as *const _ as *const _) }),
+        );
         ChildHandle(id, PhantomData)
     }
-    pub fn get<T: 'static + StableAny>(
-        &self,
-        id: &ChildHandle<T>,
-    ) -> Option<dashmap::mapref::one::RefMut<'static, u64, Arc<Context<T>>>> {
-        unsafe { std::mem::transmute(self.0.get_mut(&id.0)) }
+    pub fn get<T: 'static + IStableAny>(&self, id: &ChildHandle<T>) -> Option<Arc<Context<T>>> {
+        self.0
+            .get(&id.0)
+            .map(|a| Arc::clone(unsafe { &*(&(*a) as *const _ as *const _) }))
     }
 }
 pub struct ChildHandle<T: 'static>(pub u64, PhantomData<T>);
@@ -95,14 +87,14 @@ impl<T> From<ChildHandle<T>> for u64 {
     }
 }
 
-pub struct Context<T: StableAny + 'static + ?Sized> {
+pub struct Context<T: IStableAny + 'static + ?Sized> {
     pub avails: Avails<T>,
     pub scope: Arc<T>,
-    pub parent: Weak<Context<dyn StableAny>>,
+    pub parent: Weak<Context<dyn IStableAny>>,
     pub children: Children,
 }
 
-impl<T: StableAny + 'static> Context<T> {
+impl<T: IStableAny + 'static> Context<T> {
     pub fn new(scope: T) -> Arc<Self> {
         let s = Self {
             avails: DashMap::new().into(),
@@ -123,21 +115,21 @@ impl<T: StableAny + 'static> Context<T> {
     }
 }
 pub trait ContextExt<T: 'static> {
-    fn with<N: StableAny>(&self, scope: N) -> ChildHandle<N>;
+    fn with<N: IStableAny>(&self, scope: N) -> ChildHandle<N>;
 }
-impl<T: 'static + StableAny> ContextExt<T> for Arc<Context<T>> {
-    fn with<N: StableAny>(&self, scope: N) -> ChildHandle<N> {
+impl<T: 'static + IStableAny> ContextExt<T> for Arc<Context<T>> {
+    fn with<N: IStableAny>(&self, scope: N) -> ChildHandle<N> {
         let s: Context<N> = Context {
             avails: DashMap::new().into(),
             scope: Arc::new(scope),
-            parent: Arc::downgrade(unsafe { std::mem::transmute(self) }),
+            parent: Arc::downgrade(unsafe { &*(self as *const _ as *const _) }),
             children: Children::new(),
         };
         self.children.add(Arc::new(s))
     }
 }
 
-impl<T: StableAny> Deref for Context<T> {
+impl<T: IStableAny> Deref for Context<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {

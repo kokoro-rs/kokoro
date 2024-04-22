@@ -1,29 +1,29 @@
-use crate::{any::StableAny, context::Context};
+use crate::{any::IStableAny, context::Context};
 use std::{
     marker::{PhantomData, Tuple},
     sync::Arc,
 };
-pub trait Avail<T: StableAny>: Send + Sync {
+pub trait Avail<T: IStableAny>: Send + Sync {
     fn run(&mut self, ctx: &Context<T>);
 }
 
-pub trait Params<T: StableAny>: Tuple {
+pub trait Params<T: IStableAny>: Tuple {
     fn get(ctx: &Context<T>) -> Self;
 }
 
-impl<T: StableAny> Params<T> for () {
+impl<T: IStableAny> Params<T> for () {
     fn get(_ctx: &Context<T>) -> Self {
         ()
     }
 }
 
-impl<T: StableAny> Params<T> for (Arc<T>,) {
+impl<T: IStableAny> Params<T> for (Arc<T>,) {
     fn get(ctx: &Context<T>) -> Self {
         (Arc::clone(&ctx.scope),)
     }
 }
 
-pub struct Availed<T: StableAny, Param, Func>
+pub struct Availed<T: IStableAny, Param, Func>
 where
     Param: Params<T>,
     Func: FnMut<Param, Output = ()>,
@@ -33,7 +33,7 @@ where
     _t: PhantomData<T>,
 }
 
-impl<Param, Func, T: StableAny> Availed<T, Param, Func>
+impl<Param, Func, T: IStableAny> Availed<T, Param, Func>
 where
     Param: Params<T>,
     Func: FnMut<Param, Output = ()>,
@@ -47,20 +47,20 @@ where
     }
 }
 
-unsafe impl<Param, Func, T: StableAny> Send for Availed<T, Param, Func>
+unsafe impl<Param, Func, T: IStableAny> Send for Availed<T, Param, Func>
 where
     Param: Params<T>,
     Func: FnMut<Param, Output = ()>,
 {
 }
-unsafe impl<Param, Func, T: StableAny> Sync for Availed<T, Param, Func>
+unsafe impl<Param, Func, T: IStableAny> Sync for Availed<T, Param, Func>
 where
     Param: Params<T>,
     Func: FnMut<Param, Output = ()>,
 {
 }
 
-impl<Param, Func, T: StableAny> Avail<T> for Availed<T, Param, Func>
+impl<Param, Func, T: IStableAny> Avail<T> for Availed<T, Param, Func>
 where
     Param: Params<T>,
     Func: FnMut<Param, Output = ()>,
@@ -70,7 +70,7 @@ where
     }
 }
 
-impl<Param, Func, T: StableAny> From<Func> for Availed<T, Param, Func>
+impl<Param, Func, T: IStableAny> From<Func> for Availed<T, Param, Func>
 where
     Param: Params<T>,
     Func: FnMut<Param, Output = ()>,
