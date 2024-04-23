@@ -1,24 +1,24 @@
-use kokoro_neo::{
-    any::{IStableAny, StableAny},
-    context::Context,
-    downcast_ref,
-};
 use std::sync::Arc;
-fn main() {
-    let ctx = Context::new("bye");
-    ctx.avails.add(hello);
-    ctx.avails.add(print);
-    ctx.avails.run_all(&ctx);
 
-    let test_value: Box<dyn IStableAny> = Box::new("hello world".to_string());
-    let value: Option<&String> = downcast_ref!(*test_value, String);
-    let test_value2: Box<dyn IStableAny> = Box::new(123);
-    let value2: Option<&String> = downcast_ref!(*test_value2, String);
-    dbg!(value, value2);
+use kokoro_neo::context::Context;
+fn main() {
+    let ctx = Context::new("world");
+    ctx.avails().add(hello);
+    let child_handle = ctx.with(123);
+    let child = ctx.get_child(child_handle).unwrap();
+    child.avails().add(print);
+
+    ctx("hello");
+    ctx("bye");
+    // output:
+    // hello world
+    // hello 123
+    // bye world
+    // bye 123
 }
-fn hello() {
-    println!("hello");
+fn hello(ctx: Context<&str, &str>, s: Arc<&str>) {
+    println!("{} {}", *s, *ctx);
 }
-fn print(s: Arc<&str>) {
-    println!("{}", s);
+fn print(ctx: Context<i32, &str>, s: Arc<&str>) {
+    println!("{} {}", *s, *ctx);
 }
