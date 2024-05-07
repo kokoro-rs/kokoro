@@ -1,13 +1,8 @@
-#![feature(coerce_unsized)]
-#![feature(fn_traits)]
-#![feature(unboxed_closures)]
-#![feature(tuple_trait)]
-#![feature(downcast_unchecked)]
 #![allow(unused)]
 use std::{
     any::Any,
     cell::RefCell,
-    marker::{PhantomData, Tuple},
+    marker::PhantomData,
     ops::Deref,
     rc::{Rc, Weak},
 };
@@ -15,8 +10,9 @@ fn main() {
     let root = Node::new("scope".to_string());
     let child = root.make_child(123);
     println!("{}:\t{}", **root, **child);
+    dbg!(root, child);
 }
-
+#[derive(Debug)]
 struct Node<T: Any + ?Sized> {
     scope: Rc<dyn Any>,
     children: RefCell<Vec<Rc<Node<dyn Any>>>>,
@@ -38,8 +34,6 @@ trait NodeExt {
     fn make_child<N: Any>(&self, scope: N) -> Rc<Node<N>>;
     fn clone_dyn(&self) -> Rc<Node<dyn Any>>;
     unsafe fn borrow_dyn(&self) -> &Rc<Node<dyn Any>>;
-
-    extern "rust-call" fn call_mut(&mut self, args: ()) -> ();
 }
 impl<T: Any + ?Sized> NodeExt for Rc<Node<T>> {
     fn make_child<N: Any>(&self, scope: N) -> Rc<Node<N>> {
@@ -59,15 +53,10 @@ impl<T: Any + ?Sized> NodeExt for Rc<Node<T>> {
     unsafe fn borrow_dyn(&self) -> &Rc<Node<dyn Any>> {
         unsafe { &*(self as *const Rc<Node<T>> as *const Rc<Node<dyn Any>>) }
     }
-
-    extern "rust-call" fn call_mut(&mut self, args: ()) -> () {
-        todo!()
-    }
 }
 impl<T: Any> Deref for Node<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
-        unsafe { self.scope.downcast_ref_unchecked() }
+        unsafe { &*(self.scope.as_ref() as *const _ as *const _) }
     }
 }
-
