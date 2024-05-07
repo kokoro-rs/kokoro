@@ -318,7 +318,7 @@ impl<T: IStableAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
     pub fn children_raw(&self) -> &Children<Ps> {
         &self.raw.children
     }
-    pub fn get_child<N: Send + Sync>(&self, handel: ChildHandle<N>) -> Option<Context<N, Ps>> {
+    pub fn get_child<N: Send + Sync>(&self, handel: &ChildHandle<N>) -> Option<Context<N, Ps>> {
         self.raw.children.get(&handel.0).map(|raw| Context {
             raw,
             self_id: Some(handel.0),
