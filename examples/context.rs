@@ -5,7 +5,7 @@ fn main() {
     let ctx = Context::new("world");
     ctx.avails().add(hello);
     let child_handle = ctx.with(123);
-    let child = ctx.get_child(child_handle).unwrap();
+    let child = ctx.get_child(&child_handle).unwrap();
     child.avails().add(print);
 
     ctx("hello");

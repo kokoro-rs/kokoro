@@ -1,16 +1,27 @@
-use std::hash::Hasher;
-use std::thread_local;
+use std::{
+    any,
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 use dashmap::DashMap;
-thread_local! {
-    pub static ID_MAP:DashMap<&'static str,u64> = DashMap::new();
+use lazy_static::lazy_static;
+lazy_static! {
+    pub static ref ID_MAP: DashMap<&'static str, u64> = DashMap::new();
 }
 
 pub trait IStableAny: Send + Sync {
-    fn id(&self) -> u64;
+    fn stable_id(&self) -> u64;
 }
 pub trait UStableAny {
     const TYPE_ID: u64;
+}
+impl<T> UStableAny for T {
+    const TYPE_ID: u64 = {
+        let name: &'static [u8] = any::type_name::<T>().as_bytes();
+        let mut hasher = DefaultHasher::new();
+        hasher.write(name);
+        hasher.finish()
+    };
 }
 
 pub trait StableAny {
@@ -43,45 +54,20 @@ impl StableAny for dyn IStableAny {
         unsafe { &mut *(self as *mut _ as *mut T) }
     }
     fn is<T: UStableAny>(&self) -> bool {
-        T::TYPE_ID == self.id()
+        T::TYPE_ID == self.stable_id()
     }
 }
 
 impl<T: Send + Sync> IStableAny for T {
-    fn id(&self) -> u64 {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    fn stable_id(&self) -> u64 {
         let name: &'static str = std::any::type_name_of_val(self);
+        if let Some(id) = ID_MAP.get(name) {
+            return *id;
+        };
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
         hasher.write(name.as_bytes());
         let hash = hasher.finish();
-        ID_MAP.with(|map| {
-            if let Some(id) = map.get(name) {
-                return *id;
-            }
-            map.insert(name, hash);
-            hash
-        })
+        ID_MAP.insert(name, hash);
+        hash
     }
-}
-
-#[macro_export]
-macro_rules! downcast_ref {
-    ($value:expr, $type:ty) => {{
-        use std::hash::Hasher;
-        let type_name = std::any::type_name::<$type>();
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        hasher.write(type_name.as_bytes());
-        let hash = hasher.finish();
-        let id = kokoro_neo::any::ID_MAP.with(|map| {
-            if let Some(id) = map.get(type_name) {
-                return *id;
-            }
-            map.insert(type_name, hash);
-            hash
-        });
-        if $value.id() == id {
-            Some($value.downcast_ref_unchecked::<$type>())
-        } else {
-            Option::<&$type>::None
-        }
-    }};
 }

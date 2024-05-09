@@ -13,5 +13,7 @@ default = []
 [dependencies]
 anyhow = "1.0.83"
 dashmap = { version = "5.5.3", features = ["rayon"] }
+lazy_static = "1.4.0"
+libloading = "0.8.3"
 rand = "0.8.5"
 rayon = "1.10.0"

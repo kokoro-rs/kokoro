@@ -221,9 +221,9 @@ pub struct RawContext<Ps> {
     pub avails: Avails<dyn IStableAny, Ps>,
 }
 impl<Ps: Send + Sync> RawContext<Ps> {
-    pub fn new<T: IStableAny + 'static>(scope: T) -> Self {
+    pub fn new<T: IStableAny + 'static, S: Into<Arc<T>>>(scope: S) -> Self {
         Self {
-            scope: Arc::new(scope),
+            scope: scope.into(),
             children: Children::new(),
             parent: Weak::new(),
             avails: Avails::new(),
@@ -231,7 +231,7 @@ impl<Ps: Send + Sync> RawContext<Ps> {
     }
 }
 pub trait RawContextExt<Ps> {
-    unsafe fn downcast_unchecked<T: IStableAny>(
+    unsafe fn downcast_unchecked<T: IStableAny + ?Sized>(
         &self,
         self_id: Option<u64>,
         call_from: Option<u128>,
@@ -239,7 +239,7 @@ pub trait RawContextExt<Ps> {
     fn with<T: IStableAny + 'static>(&self, scope: T) -> (Arc<RawContext<Ps>>, u64);
 }
 impl<Ps: Send + Sync> RawContextExt<Ps> for Arc<RawContext<Ps>> {
-    unsafe fn downcast_unchecked<T: IStableAny>(
+    unsafe fn downcast_unchecked<T: IStableAny + ?Sized>(
         &self,
         self_id: Option<u64>,
         call_from: Option<u128>,
