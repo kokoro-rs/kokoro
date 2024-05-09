@@ -1,0 +1,11 @@
+[package]
+name = "dynplugin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kokoro-neo = {path="../../"}
+
+[lib]
+crate-type = ["dylib"]
+

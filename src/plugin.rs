@@ -4,7 +4,7 @@ pub trait Pluggable<Ps>: Send + Sync + Sized {
     fn plug<P: Plugin<Ps>>(&self, p: P) -> Result<ChildHandle<P>>;
     fn unplug<P: Plugin<Ps>>(&self, handle: ChildHandle<P>) -> Result<Context<P, Ps>>;
 }
-impl<T: IStableAny + 'static + ?Sized, Ps: Send + Sync> Pluggable<Ps> for Context<T, Ps> {
+impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Pluggable<Ps> for Context<T, Ps> {
     fn plug<P: Plugin<Ps>>(&self, p: P) -> Result<ChildHandle<P>> {
         let child_handle = self.with(p);
         let ctx = self
@@ -33,35 +33,56 @@ pub mod dynamic {
         sync::{Arc, Weak},
     };
 
-    pub type LoadFn<Ps> = fn(ctx: Context<dyn IStableAny, Ps>) -> Result<()>;
-    pub type CreateFn = fn() -> Arc<dyn IStableAny>;
+    pub type LoadFn<Ps> = fn(ctx: Context<dyn StableAny, Ps>) -> Result<()>;
+    pub type CreateFn = fn() -> Arc<dyn StableAny>;
     pub type VerifyFn = fn() -> u64;
     pub struct DynPlugin<Ps> {
         pub lib: Library,
         _p: PhantomData<Ps>,
     }
-    impl<Ps> TryFrom<Library> for DynPlugin<Ps> {
-        type Error = anyhow::Error;
-
-        fn try_from(value: Library) -> Result<Self, Self::Error> {
-            let verify_fn: Symbol<VerifyFn> = unsafe { value.get(b"__verify__")? };
+    impl<Ps> DynPlugin<Ps> {
+        pub fn from_lib(lib: Library) -> Result<Self> {
+            let verify_fn: Symbol<VerifyFn> = unsafe { lib.get(b"__verify__")? };
             let id = verify_fn();
             if Ps::TYPE_ID != id {
                 Err(anyhow!("Plugin Misfit"))
             } else {
                 Ok(DynPlugin {
-                    lib: value,
+                    lib,
                     _p: PhantomData,
                 })
             }
         }
     }
+    impl<Ps> TryFrom<Library> for DynPlugin<Ps> {
+        type Error = anyhow::Error;
+        fn try_from(value: Library) -> Result<Self, Self::Error> {
+            Self::from_lib(value)
+        }
+    }
+    impl<Ps> TryFrom<&'static str> for DynPlugin<Ps> {
+        type Error = anyhow::Error;
+        fn try_from(value: &'static str) -> Result<Self, Self::Error> {
+            let lib = unsafe { libloading::Library::new(value)? };
+            Self::from_lib(lib)
+        }
+    }
+    impl<Ps> TryFrom<&String> for DynPlugin<Ps> {
+        type Error = anyhow::Error;
+        fn try_from(value: &String) -> Result<Self, Self::Error> {
+            let lib = unsafe { libloading::Library::new(value)? };
+            Self::from_lib(lib)
+        }
+    }
     pub trait DynPluggable<Ps> {
         fn dyn_plug<L: Into<DynPlugin<Ps>>>(&self, lib: L) -> Result<()>;
     }
-    impl<T: IStableAny + 'static + ?Sized, Ps: Send + Sync> DynPluggable<Ps> for Context<T, Ps> {
-        fn dyn_plug<L: Into<DynPlugin<Ps>>>(&self, lib: L) -> Result<()> {
-            let dyn_plugin: DynPlugin<Ps> = lib.into();
+    impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> DynPluggable<Ps> for Context<T, Ps> {
+        fn dyn_plug<L: TryInto<DynPlugin<Ps>>>(&self, lib: L) -> Result<()>
+        where
+            L::Error: Send + Sync + std::error::Error + 'static,
+        {
+            let dyn_plugin: DynPlugin<Ps> = lib.try_into()?;
             let create_fn: Symbol<CreateFn> = unsafe { dyn_plugin.lib.get(b"__create__")? };
             let load_fn: Symbol<LoadFn<Ps>> = unsafe { dyn_plugin.lib.get(b"__load__")? };
             let scope = create_fn();
@@ -73,7 +94,7 @@ pub mod dynamic {
             }
             .into();
             let id = self.children_raw().add(Arc::clone(&raw));
-            let ctx = unsafe { raw.downcast_unchecked::<dyn IStableAny>(Some(id), None) };
+            let ctx = unsafe { raw.downcast_unchecked::<dyn StableAny>(Some(id), None) };
             load_fn(ctx)?;
             Ok(())
         }

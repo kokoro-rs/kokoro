@@ -1,0 +1,65 @@
+thread 'rustc' panicked at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af\compiler\rustc_middle\src\ty\util.rs:886:22:
+ConstContext::Maybe must have host effect param
+stack backtrace:
+   0:     0x7ffa37fed553 - std::backtrace_rs::backtrace::dbghelp64::trace
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\..\..\backtrace\src\backtrace\dbghelp64.rs:91
+   1:     0x7ffa37fed553 - std::backtrace_rs::backtrace::trace_unsynchronized
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\..\..\backtrace\src\backtrace\mod.rs:66
+   2:     0x7ffa37fed553 - std::backtrace::Backtrace::create
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\backtrace.rs:331
+   3:     0x7ffa37fed49a - std::backtrace::Backtrace::force_capture
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\backtrace.rs:312
+   4:     0x7ffa130d25e0 - __longjmp_internal
+   5:     0x7ffa38007017 - alloc::boxed::impl$50::call
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\alloc\src\boxed.rs:2036
+   6:     0x7ffa38007017 - std::panicking::rust_panic_with_hook
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\panicking.rs:799
+   7:     0x7ffa38006ea7 - std::panicking::begin_panic_handler::closure$0
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\panicking.rs:664
+   8:     0x7ffa3800441f - std::sys_common::backtrace::__rust_end_short_backtrace<std::panicking::begin_panic_handler::closure_env$0,never$>
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\sys_common\backtrace.rs:171
+   9:     0x7ffa38006b58 - std::panicking::begin_panic_handler
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\panicking.rs:652
+  10:     0x7ffa3805d4e4 - core::panicking::panic_fmt
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\core\src\panicking.rs:72
+  11:     0x7ffa3803180d - core::panicking::panic_display<ref$<str$> >
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\core\src\panicking.rs:262
+  12:     0x7ffa3805d4ae - core::option::expect_failed
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\core\src\option.rs:1994
+  13:     0x7ffa11e1f6d7 - <rustc_codegen_llvm[f4ea6b099f8eaed2]::builder::Builder as rustc_codegen_ssa[86941677bd912dfd]::traits::builder::BuilderMethods>::load_operand
+  14:     0x7ffa11e39490 - <rustc_codegen_llvm[f4ea6b099f8eaed2]::builder::Builder as rustc_codegen_ssa[86941677bd912dfd]::traits::builder::BuilderMethods>::load_operand
+  15:     0x7ffa11e93050 - <rustc_hir_typeck[a97b695aa26f3989]::expr_use_visitor::ExprUseVisitor>::walk_expr
+  16:     0x7ffa11e947a8 - <rustc_hir_typeck[a97b695aa26f3989]::expr_use_visitor::ExprUseVisitor>::walk_expr
+  17:     0x7ffa11e39aec - <rustc_codegen_llvm[f4ea6b099f8eaed2]::builder::Builder as rustc_codegen_ssa[86941677bd912dfd]::traits::builder::BuilderMethods>::load_operand
+  18:     0x7ffa11ef4e05 - rustc_hir_typeck[a97b695aa26f3989]::typeck
+  19:     0x7ffa11ee595e - rustc_hir_typeck[a97b695aa26f3989]::typeck
+  20:     0x7ffa12754fca - rustc_query_impl[f08ecdf72892a96a]::plumbing::query_key_hash_verify_all
+  21:     0x7ffa126acca6 - rustc_ty_utils[843b6fc19f2bbcca]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  22:     0x7ffa1275d144 - rustc_query_impl[f08ecdf72892a96a]::plumbing::query_key_hash_verify_all
+  23:     0x7ffa11f48051 - <rustc_hir_typeck[a97b695aa26f3989]::upvar::InferBorrowKind as rustc_hir_typeck[a97b695aa26f3989]::expr_use_visitor::Delegate>::borrow
+  24:     0x7ffa11fbb6d4 - rustc_hir_analysis[b9b4f5068d31f05a]::check_crate
+  25:     0x7ffa11d306a2 - <rustc_interface[a63a7cb8945a3d7a]::passes::LintStoreExpandImpl as rustc_expand[5be408e6ed6368e5]::base::LintStoreExpand>::pre_expansion_lint
+  26:     0x7ffa0ed38387 - rustc_interface[a63a7cb8945a3d7a]::passes::create_global_ctxt
+  27:     0x7ffa11920d3a - <dyn std[d89b8f478f6f6346]::io::Write as nu_ansi_term[7095144f9edefffe]::write::AnyWrite>::write_str
+  28:     0x7ffa11840629 - rustc_ty_utils[843b6fc19f2bbcca]::ty::adt_sized_constraint
+  29:     0x7ffa119262c3 - rustc_query_impl[f08ecdf72892a96a]::query_system
+  30:     0x7ffa0ecf3cc9 - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  31:     0x7ffa0ecf0f2f - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  32:     0x7ffa0ecf8d59 - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  33:     0x7ffa3801808d - alloc::boxed::impl$48::call_once
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\alloc\src\boxed.rs:2022
+  34:     0x7ffa3801808d - alloc::boxed::impl$48::call_once
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\alloc\src\boxed.rs:2022
+  35:     0x7ffa3801808d - std::sys::pal::windows::thread::impl$0::new::thread_start
+                               at /rustc/faefc618cf48bd794cbc808448df1bf3f59f36af/library\std\src\sys\pal\windows\thread.rs:52
+  36:     0x7ffaebec257d - BaseThreadInitThunk
+  37:     0x7ffaedd8aa48 - RtlUserThreadStart
+
+
+rustc version: 1.80.0-nightly (faefc618c 2024-05-07)
+platform: x86_64-pc-windows-msvc
+
+query stack during panic:
+#0 [typeck] type-checking `any::<impl at src\any.rs:57:1: 57:38>::stable_id`
+#1 [analysis] running analysis passes on this crate
+end of query stack
