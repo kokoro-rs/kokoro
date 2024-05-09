@@ -1,40 +1,40 @@
-use crate::{any::StableAny, context::Context};
+use crate::{any::KAny, context::Context};
 use std::{
     marker::{PhantomData, Tuple},
     sync::Arc,
 };
-pub trait Avail<T: StableAny + ?Sized, Ps>: Send + Sync {
+pub trait Avail<T: KAny + ?Sized, Ps>: Send + Sync {
     fn run(&mut self, ctx: &Context<T, Ps>, ps: Arc<Ps>);
 }
 
-pub trait Params<T: StableAny, Ps>: Tuple {
+pub trait Params<T: KAny, Ps>: Tuple {
     fn get(ctx: &Context<T, Ps>, ps: Arc<Ps>) -> Self;
 }
 
-impl<T: StableAny, Ps> Params<T, Ps> for () {
+impl<T: KAny, Ps> Params<T, Ps> for () {
     fn get(_ctx: &Context<T, Ps>, _ps: Arc<Ps>) -> Self {
         ()
     }
 }
 
-impl<T: StableAny, Ps> Params<T, Ps> for (Context<T, Ps>,) {
+impl<T: KAny, Ps> Params<T, Ps> for (Context<T, Ps>,) {
     fn get(ctx: &Context<T, Ps>, _ps: Arc<Ps>) -> Self {
         (ctx.clone(),)
     }
 }
-impl<T: StableAny, Ps> Params<T, Ps> for (Context<T, Ps>, Arc<Ps>) {
+impl<T: KAny, Ps> Params<T, Ps> for (Context<T, Ps>, Arc<Ps>) {
     fn get(ctx: &Context<T, Ps>, ps: Arc<Ps>) -> Self {
         (ctx.clone(), ps)
     }
 }
 
-impl<T: StableAny, Ps> Params<T, Ps> for (Arc<Ps>,) {
+impl<T: KAny, Ps> Params<T, Ps> for (Arc<Ps>,) {
     fn get(_ctx: &Context<T, Ps>, ps: Arc<Ps>) -> Self {
         (ps,)
     }
 }
 
-pub struct Availed<T: StableAny, Param, Func, Ps>
+pub struct Availed<T: KAny, Param, Func, Ps>
 where
     Param: Params<T, Ps>,
     Func: FnMut<Param, Output = ()>,
@@ -45,7 +45,7 @@ where
     _ps: PhantomData<Ps>,
 }
 
-impl<Param, Func, T: StableAny, Ps> Availed<T, Param, Func, Ps>
+impl<Param, Func, T: KAny, Ps> Availed<T, Param, Func, Ps>
 where
     Param: Params<T, Ps>,
     Func: FnMut<Param, Output = ()>,
@@ -60,20 +60,20 @@ where
     }
 }
 
-unsafe impl<Param, Func, T: StableAny, Ps> Send for Availed<T, Param, Func, Ps>
+unsafe impl<Param, Func, T: KAny, Ps> Send for Availed<T, Param, Func, Ps>
 where
     Param: Params<T, Ps>,
     Func: FnMut<Param, Output = ()>,
 {
 }
-unsafe impl<Param, Func, T: StableAny, Ps> Sync for Availed<T, Param, Func, Ps>
+unsafe impl<Param, Func, T: KAny, Ps> Sync for Availed<T, Param, Func, Ps>
 where
     Param: Params<T, Ps>,
     Func: FnMut<Param, Output = ()>,
 {
 }
 
-impl<Param, Func, T: StableAny, Ps> Avail<T, Ps> for Availed<T, Param, Func, Ps>
+impl<Param, Func, T: KAny, Ps> Avail<T, Ps> for Availed<T, Param, Func, Ps>
 where
     Param: Params<T, Ps>,
     Func: FnMut<Param, Output = ()>,
@@ -83,7 +83,7 @@ where
     }
 }
 
-impl<Param, Func, T: StableAny, Ps> From<Func> for Availed<T, Param, Func, Ps>
+impl<Param, Func, T: KAny, Ps> From<Func> for Availed<T, Param, Func, Ps>
 where
     Param: Params<T, Ps>,
     Func: FnMut<Param, Output = ()>,

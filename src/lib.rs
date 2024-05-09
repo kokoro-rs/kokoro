@@ -16,7 +16,7 @@ pub use anyhow as result;
 #[test]
 fn test() {
     use any::*;
-    let foo: &dyn StableAny = &String::from("hello");
+    let foo: &dyn KAny = &String::from("hello");
     let bar = foo.downcast_ref::<String>();
     assert!(bar.is_some())
 }

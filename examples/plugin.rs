@@ -11,10 +11,12 @@ fn main() -> Result<()> {
     ctx("Hello Plugin");
     Ok(())
 }
+
 struct MyPlugin;
 impl Plugin<&'static str> for MyPlugin {
     fn load(ctx: kokoro_neo::context::Context<Self, &'static str>) -> anyhow::Result<()> {
         ctx.avails().add(|str: Arc<&str>| println!("{}", str));
+        ctx("Hello From Plugin");
         Ok(())
     }
 }

@@ -4,7 +4,7 @@ pub trait Pluggable<Ps>: Send + Sync + Sized {
     fn plug<P: Plugin<Ps>>(&self, p: P) -> Result<ChildHandle<P>>;
     fn unplug<P: Plugin<Ps>>(&self, handle: ChildHandle<P>) -> Result<Context<P, Ps>>;
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Pluggable<Ps> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Pluggable<Ps> for Context<T, Ps> {
     fn plug<P: Plugin<Ps>>(&self, p: P) -> Result<ChildHandle<P>> {
         let child_handle = self.with(p);
         let ctx = self
@@ -29,12 +29,11 @@ pub mod dynamic {
     use anyhow::{anyhow, Result};
     use libloading::{Library, Symbol};
     use std::{
-        marker::PhantomData,
-        sync::{Arc, Weak},
+        marker::PhantomData, sync::{Arc, OnceLock, Weak}
     };
 
-    pub type LoadFn<Ps> = fn(ctx: Context<dyn StableAny, Ps>) -> Result<()>;
-    pub type CreateFn = fn() -> Arc<dyn StableAny>;
+    pub type LoadFn<Ps> = fn(ctx: Arc<RawContext<Ps>>, self_id: u64) -> Result<()>;
+    pub type CreateFn = fn() -> Arc<dyn KAny>;
     pub type VerifyFn = fn() -> u64;
     pub struct DynPlugin<Ps> {
         pub lib: Library,
@@ -44,7 +43,7 @@ pub mod dynamic {
         pub fn from_lib(lib: Library) -> Result<Self> {
             let verify_fn: Symbol<VerifyFn> = unsafe { lib.get(b"__verify__")? };
             let id = verify_fn();
-            if Ps::TYPE_ID != id {
+            if Ps::KID != id {
                 Err(anyhow!("Plugin Misfit"))
             } else {
                 Ok(DynPlugin {
@@ -60,9 +59,9 @@ pub mod dynamic {
             Self::from_lib(value)
         }
     }
-    impl<Ps> TryFrom<&'static str> for DynPlugin<Ps> {
+    impl<Ps> TryFrom<&str> for DynPlugin<Ps> {
         type Error = anyhow::Error;
-        fn try_from(value: &'static str) -> Result<Self, Self::Error> {
+        fn try_from(value: &str) -> Result<Self, Self::Error> {
             let lib = unsafe { libloading::Library::new(value)? };
             Self::from_lib(lib)
         }
@@ -75,13 +74,10 @@ pub mod dynamic {
         }
     }
     pub trait DynPluggable<Ps> {
-        fn dyn_plug<L: Into<DynPlugin<Ps>>>(&self, lib: L) -> Result<()>;
+        fn dyn_plug<L: TryInto<DynPlugin<Ps>, Error = anyhow::Error>>(&self, lib: L) -> Result<()>;
     }
-    impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> DynPluggable<Ps> for Context<T, Ps> {
-        fn dyn_plug<L: TryInto<DynPlugin<Ps>>>(&self, lib: L) -> Result<()>
-        where
-            L::Error: Send + Sync + std::error::Error + 'static,
-        {
+    impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + 'static> DynPluggable<Ps> for Context<T, Ps> {
+        fn dyn_plug<L: TryInto<DynPlugin<Ps>, Error = anyhow::Error>>(&self, lib: L) -> Result<()> {
             let dyn_plugin: DynPlugin<Ps> = lib.try_into()?;
             let create_fn: Symbol<CreateFn> = unsafe { dyn_plugin.lib.get(b"__create__")? };
             let load_fn: Symbol<LoadFn<Ps>> = unsafe { dyn_plugin.lib.get(b"__load__")? };
@@ -91,12 +87,41 @@ pub mod dynamic {
                 children: Children::new(),
                 parent: Weak::new(),
                 avails: Avails::new(),
+                _effects:Box::new([OnceLock::new()])
             }
             .into();
             let id = self.children_raw().add(Arc::clone(&raw));
-            let ctx = unsafe { raw.downcast_unchecked::<dyn StableAny>(Some(id), None) };
-            load_fn(ctx)?;
+            load_fn(raw.clone(), id)?;
+            let _ = raw._effects[0].set(Box::new(dyn_plugin));
             Ok(())
         }
+    }
+    #[macro_export]
+    macro_rules! export_plugin {
+        ($plugin:ty,$instance:expr,$type:ty) => {
+            #[no_mangle]
+            extern "Rust" fn __load__(
+                ctx: ::std::sync::Arc<$crate::context::RawContext<$type>>,
+                self_id: u64,
+            ) -> $crate::result::Result<()> {
+                let ctx = unsafe {
+                    $crate::context::RawContextExt::downcast_unchecked::<$plugin>(
+                        ctx,
+                        Some(self_id),
+                        None,
+                    )
+                };
+                <$plugin as $crate::plugin::Plugin<$type>>::load(ctx)?;
+                Ok(())
+            }
+            #[no_mangle]
+            extern "Rust" fn __create__() -> ::std::sync::Arc<dyn $crate::any::KAny> {
+                ::std::sync::Arc::new($instance)
+            }
+            #[no_mangle]
+            extern "Rust" fn __verify__() -> u64 {
+                <$type as $crate::any::KID>::KID
+            }
+        };
     }
 }

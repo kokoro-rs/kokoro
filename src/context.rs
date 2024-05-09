@@ -1,18 +1,18 @@
 use std::marker::PhantomData;
-use std::mem;
 use std::ops::Deref;
-use std::sync::{Arc, Mutex, Weak};
+use std::mem;
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 
 use dashmap::DashMap;
 use rand::rngs::mock::StepRng;
 use rand::Rng;
 use rayon::prelude::*;
 
-use crate::any::StableAny;
+use crate::any::KAny;
 use crate::avail::{Avail, Availed, Params};
 
 pub struct Avails<T: ?Sized, Ps>(DashMap<u128, Box<dyn Avail<T, Ps>>>, Mutex<StepRng>);
-pub struct AvailHandle<T: StableAny, Param: Params<T, Ps>, Func: FnMut<Param, Output = ()>, Ps>(
+pub struct AvailHandle<T: KAny, Param: Params<T, Ps>, Func: FnMut<Param, Output = ()>, Ps>(
     pub u128,
     PhantomData<T>,
     PhantomData<Param>,
@@ -24,22 +24,22 @@ impl<T, Ps> From<DashMap<u128, Box<dyn Avail<T, Ps>>>> for Avails<T, Ps> {
         Self(value, StepRng::new(0, 1).into())
     }
 }
-impl<T: StableAny, Param: Params<T, Ps>, Func: FnMut<Param, Output = ()>, Ps>
+impl<T: KAny, Param: Params<T, Ps>, Func: FnMut<Param, Output = ()>, Ps>
     From<AvailHandle<T, Param, Func, Ps>> for u128
 {
     fn from(value: AvailHandle<T, Param, Func, Ps>) -> Self {
         value.0
     }
 }
-impl<Ps> Avails<dyn StableAny, Ps> {
-    pub unsafe fn upcast<T: StableAny + ?Sized>(self) -> Avails<T, Ps> {
-        mem::transmute::<Avails<dyn StableAny, Ps>, Avails<T, Ps>>(self)
+impl<Ps> Avails<dyn KAny, Ps> {
+    pub unsafe fn upcast<T: KAny + ?Sized>(self) -> Avails<T, Ps> {
+        mem::transmute::<Avails<dyn KAny, Ps>, Avails<T, Ps>>(self)
     }
-    pub unsafe fn upcast_ref<T: StableAny + ?Sized>(&self) -> &Avails<T, Ps> {
-        mem::transmute::<&Avails<dyn StableAny, Ps>, &Avails<T, Ps>>(self)
+    pub unsafe fn upcast_ref<T: KAny + ?Sized>(&self) -> &Avails<T, Ps> {
+        mem::transmute::<&Avails<dyn KAny, Ps>, &Avails<T, Ps>>(self)
     }
 }
-impl<T: 'static + Send + Sync + StableAny + ?Sized, Ps: Send + Sync> Avails<T, Ps> {
+impl<T: 'static + Send + Sync + KAny + ?Sized, Ps: Send + Sync> Avails<T, Ps> {
     /// #### 创建一个可用性函数容器
     ///
     /// 其本质是一个`DashMap`对象，用于存储可用性对象。
@@ -68,7 +68,7 @@ impl<T: 'static + Send + Sync + StableAny + ?Sized, Ps: Send + Sync> Avails<T, P
     }
 }
 
-impl<T: 'static + Send + Sync + StableAny, Ps: 'static> Avails<T, Ps> {
+impl<T: 'static + Send + Sync + KAny, Ps: 'static> Avails<T, Ps> {
     /// #### 添加一个可用性函数
     ///
     /// 这个函数可以将一个可用性对象添加到容器中，
@@ -164,13 +164,13 @@ impl<T> From<u64> for ChildHandle<T> {
     }
 }
 
-pub struct Context<T: StableAny + 'static + ?Sized, Ps> {
+pub struct Context<T: KAny + 'static + ?Sized, Ps> {
     raw: Arc<RawContext<Ps>>,
     self_id: Option<u64>,
     call_from: Option<u128>,
     _marker: PhantomData<T>,
 }
-impl<T: StableAny + 'static + ?Sized, Ps> Clone for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps> Clone for Context<T, Ps> {
     fn clone(&self) -> Self {
         Self {
             raw: self.raw.clone(),
@@ -180,83 +180,86 @@ impl<T: StableAny + 'static + ?Sized, Ps> Clone for Context<T, Ps> {
         }
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> FnOnce<(Ps,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnOnce<(Ps,)> for Context<T, Ps> {
     type Output = ();
 
     extern "rust-call" fn call_once(self, args: (Ps,)) -> Self::Output {
         self.recursive_avail(Arc::new(args.0));
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> FnMut<(Ps,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnMut<(Ps,)> for Context<T, Ps> {
     extern "rust-call" fn call_mut(&mut self, args: (Ps,)) -> Self::Output {
         self.recursive_avail(Arc::new(args.0));
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Fn<(Ps,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Fn<(Ps,)> for Context<T, Ps> {
     extern "rust-call" fn call(&self, args: (Ps,)) -> Self::Output {
         self.recursive_avail(Arc::new(args.0));
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> FnOnce<(Arc<Ps>,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnOnce<(Arc<Ps>,)> for Context<T, Ps> {
     type Output = ();
 
     extern "rust-call" fn call_once(self, args: (Arc<Ps>,)) -> Self::Output {
         self.recursive_avail(args.0);
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> FnMut<(Arc<Ps>,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnMut<(Arc<Ps>,)> for Context<T, Ps> {
     extern "rust-call" fn call_mut(&mut self, args: (Arc<Ps>,)) -> Self::Output {
         self.recursive_avail(args.0);
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Fn<(Arc<Ps>,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Fn<(Arc<Ps>,)> for Context<T, Ps> {
     extern "rust-call" fn call(&self, args: (Arc<Ps>,)) -> Self::Output {
         self.recursive_avail(args.0);
     }
 }
 pub struct RawContext<Ps> {
-    pub scope: Arc<dyn StableAny>,
+    pub scope: Arc<dyn KAny>,
     pub children: Children<Ps>,
     pub parent: Weak<RawContext<Ps>>,
-    pub avails: Avails<dyn StableAny, Ps>,
+    pub avails: Avails<dyn KAny, Ps>,
+    pub _effects: Box<[OnceLock<Box<dyn KAny>>]>,
 }
 impl<Ps: Send + Sync> RawContext<Ps> {
-    pub fn new<T: StableAny + 'static, S: Into<Arc<T>>>(scope: S) -> Self {
+    pub fn new<T: KAny + 'static, S: Into<Arc<T>>>(scope: S) -> Self {
         Self {
             scope: scope.into(),
             children: Children::new(),
             parent: Weak::new(),
             avails: Avails::new(),
+            _effects: Box::new([]),
         }
     }
 }
 pub trait RawContextExt<Ps> {
-    unsafe fn downcast_unchecked<T: StableAny + ?Sized>(
-        &self,
+    unsafe fn downcast_unchecked<T: KAny + ?Sized>(
+        self,
         self_id: Option<u64>,
         call_from: Option<u128>,
     ) -> Context<T, Ps>;
-    fn with<T: StableAny + 'static>(&self, scope: T) -> (Arc<RawContext<Ps>>, u64);
+    fn with<T: KAny + 'static>(&self, scope: T) -> (Arc<RawContext<Ps>>, u64);
 }
 impl<Ps: Send + Sync> RawContextExt<Ps> for Arc<RawContext<Ps>> {
-    unsafe fn downcast_unchecked<T: StableAny + ?Sized>(
-        &self,
+    unsafe fn downcast_unchecked<T: KAny + ?Sized>(
+        self,
         self_id: Option<u64>,
         call_from: Option<u128>,
     ) -> Context<T, Ps> {
         Context {
-            raw: Arc::clone(self),
+            raw: Arc::clone(&self),
             self_id,
             call_from,
             _marker: PhantomData,
         }
     }
-    fn with<T: StableAny + 'static>(&self, scope: T) -> (Arc<RawContext<Ps>>, u64) {
+    fn with<T: KAny + 'static>(&self, scope: T) -> (Arc<RawContext<Ps>>, u64) {
         let raw = RawContext {
             scope: Arc::new(scope),
             children: Children::new(),
             parent: Arc::downgrade(self),
             avails: Avails::new(),
+            _effects: Box::new([]),
         };
         let araw = Arc::new(raw);
         let id = self.children.add(araw.clone());
@@ -264,7 +267,7 @@ impl<Ps: Send + Sync> RawContextExt<Ps> for Arc<RawContext<Ps>> {
     }
 }
 
-impl<T: StableAny + 'static, Ps: Send + Sync> Context<T, Ps> {
+impl<T: KAny + 'static, Ps: Send + Sync> Context<T, Ps> {
     pub fn new(scope: T) -> Self {
         Self {
             raw: Arc::new(RawContext::new(scope)),
@@ -280,6 +283,7 @@ impl<T: StableAny + 'static, Ps: Send + Sync> Context<T, Ps> {
                 children: Children::new(),
                 parent: Weak::new(),
                 avails: unsafe { mem::transmute(avails) },
+                _effects: Box::new([]),
             }),
             self_id: None,
             call_from: None,
@@ -290,13 +294,13 @@ impl<T: StableAny + 'static, Ps: Send + Sync> Context<T, Ps> {
         &self.raw.scope.as_ref().downcast_ref_unchecked()
     }
 }
-impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
     pub fn recursive_avail(&self, ps: Arc<Ps>) {
         self.raw
             .avails
             .run_all(unsafe { self.upcast_ref() }, ps.clone());
         self.raw.children.0.par_iter().for_each(|child_raw| {
-            let ctx: Context<dyn StableAny, Ps> = Context {
+            let ctx: Context<dyn KAny, Ps> = Context {
                 raw: child_raw.clone(),
                 self_id: Some(*child_raw.key()),
                 call_from: None,
@@ -305,10 +309,10 @@ impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
             ctx.recursive_avail(ps.clone());
         });
     }
-    pub unsafe fn upcast_ref(&self) -> &Context<dyn StableAny, Ps> {
+    pub unsafe fn upcast_ref(&self) -> &Context<dyn KAny, Ps> {
         unsafe { mem::transmute(self) }
     }
-    pub fn with<N: StableAny>(&self, scope: N) -> ChildHandle<N> {
+    pub fn with<N: KAny>(&self, scope: N) -> ChildHandle<N> {
         let (_, id) = self.raw.with(scope);
         ChildHandle::from(id)
     }
@@ -326,9 +330,12 @@ impl<T: StableAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
             _marker: PhantomData,
         })
     }
+    pub fn into_raw(self) -> Arc<RawContext<Ps>> {
+        self.raw
+    }
 }
 
-impl<T: StableAny, Ps: Send + Sync> Deref for Context<T, Ps> {
+impl<T: KAny, Ps: Send + Sync> Deref for Context<T, Ps> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
