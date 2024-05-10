@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use kokoro_neo::context::Context;
 fn main() {
     let ctx = Context::new("world");
@@ -16,9 +14,9 @@ fn main() {
     // bye world
     // bye 123
 }
-fn hello(ctx: Context<&str, &str>, s: Arc<&str>) {
-    println!("{} {}", *s, *ctx);
+fn hello(ctx: Context<&str, &str>, s: &str) {
+    println!("{} {}", s, *ctx);
 }
-fn print(ctx: Context<i32, &str>, s: Arc<&str>) {
-    println!("{} {}", *s, *ctx);
+fn print(ctx: Context<i32, &str>, s: &str) {
+    println!("{} {}", s, *ctx);
 }

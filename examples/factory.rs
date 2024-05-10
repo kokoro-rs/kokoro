@@ -1,7 +1,4 @@
-use std::sync::{
-    mpsc::{channel, Sender},
-    Arc,
-};
+use std::sync::mpsc::{channel, Sender};
 
 use kokoro_neo::context::*;
 fn main() {
@@ -19,12 +16,12 @@ fn main() {
 }
 
 // 负责生产工件的工人
-fn worker1(ctx: Context<Sender<String>, &str>, s: Arc<&str>) {
+fn worker1(ctx: Context<Sender<String>, &str>, s: &str) {
     ctx.send(format!("{} 的零件1", s)).unwrap();
 }
-fn worker2(ctx: Context<Sender<String>, &str>, s: Arc<&str>) {
+fn worker2(ctx: Context<Sender<String>, &str>, s: &str) {
     ctx.send(format!("{} 的零件2", s)).unwrap();
 }
-fn worker3(ctx: Context<Sender<String>, &str>, s: Arc<&str>) {
+fn worker3(ctx: Context<Sender<String>, &str>, s: &str) {
     ctx.send(format!("{} 的零件3", s)).unwrap();
 }

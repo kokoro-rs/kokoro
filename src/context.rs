@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
-use std::ops::Deref;
 use std::mem;
+use std::ops::Deref;
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 
 use dashmap::DashMap;
@@ -9,45 +9,11 @@ use rand::Rng;
 use rayon::prelude::*;
 
 use crate::any::KAny;
-use crate::avail::{Avail, Availed, Params};
+use crate::avail::*;
 
-pub struct Avails<T: ?Sized, Ps>(DashMap<u128, Box<dyn Avail<T, Ps>>>, Mutex<StepRng>);
-pub struct AvailHandle<T: KAny, Param: Params<T, Ps>, Func: FnMut<Param, Output = ()>, Ps>(
-    pub u128,
-    PhantomData<T>,
-    PhantomData<Param>,
-    PhantomData<Func>,
-    PhantomData<Ps>,
-);
-impl<T, Ps> From<DashMap<u128, Box<dyn Avail<T, Ps>>>> for Avails<T, Ps> {
-    fn from(value: DashMap<u128, Box<dyn Avail<T, Ps>>>) -> Self {
-        Self(value, StepRng::new(0, 1).into())
-    }
-}
-impl<T: KAny, Param: Params<T, Ps>, Func: FnMut<Param, Output = ()>, Ps>
-    From<AvailHandle<T, Param, Func, Ps>> for u128
-{
-    fn from(value: AvailHandle<T, Param, Func, Ps>) -> Self {
-        value.0
-    }
-}
-impl<Ps> Avails<dyn KAny, Ps> {
-    pub unsafe fn upcast<T: KAny + ?Sized>(self) -> Avails<T, Ps> {
-        mem::transmute::<Avails<dyn KAny, Ps>, Avails<T, Ps>>(self)
-    }
-    pub unsafe fn upcast_ref<T: KAny + ?Sized>(&self) -> &Avails<T, Ps> {
-        mem::transmute::<&Avails<dyn KAny, Ps>, &Avails<T, Ps>>(self)
-    }
-}
-impl<T: 'static + Send + Sync + KAny + ?Sized, Ps: Send + Sync> Avails<T, Ps> {
-    /// #### 创建一个可用性函数容器
-    ///
-    /// 其本质是一个`DashMap`对象，用于存储可用性对象。
-    pub fn new() -> Self {
-        Self(DashMap::new(), StepRng::new(0, 1).into())
-    }
+impl<T: 'static + Send + Sync + KAny + ?Sized, Ps: Send + Sync + Clone> Avails<T, Ps> {
     /// 执行所有可用性函数
-    pub fn run_all(&self, ctx: &Context<T, Ps>, ps: Arc<Ps>) {
+    pub fn run_all(&self, ctx: &Context<T, Ps>, ps: Ps) {
         self.0.par_iter_mut().for_each(|mut avail| {
             let from_id = *avail.key();
             if let Some(id) = ctx.call_from {
@@ -67,74 +33,6 @@ impl<T: 'static + Send + Sync + KAny + ?Sized, Ps: Send + Sync> Avails<T, Ps> {
         });
     }
 }
-
-impl<T: 'static + Send + Sync + KAny, Ps: 'static> Avails<T, Ps> {
-    /// #### 添加一个可用性函数
-    ///
-    /// 这个函数可以将一个可用性对象添加到容器中，
-    /// 该对象会在容器的`run_all`方法被调用时被执行。
-    ///
-    /// 这个函数返回一个`AvailHandle`，
-    /// 可以用于删除该可用性函数。
-    ///
-    /// #### 参数
-    /// * `avail` - 一个可用性对象，该对象必须实现`Availed` trait
-    ///
-    /// #### 用例
-    /// ```rust
-    /// let ctx = Contenxt::new(());
-    /// let handle = ctx.avails.add(avail_fn);
-    /// ctx.avails.run_all(&ctx); // 运行所有可用性函数
-    /// ctx.avails.remove(&handle); // 删除可用性函数
-    /// fn avail_fn() {
-    ///     println!("hello world");    
-    /// }
-    /// ```
-    pub fn add<Param, Func, A: Into<Availed<T, Param, Func, Ps>>>(
-        &self,
-        avail: A,
-    ) -> AvailHandle<T, Param, Func, Ps>
-    where
-        Param: Params<T, Ps> + 'static,
-        Func: FnMut<Param, Output = ()> + 'static,
-    {
-        let id = &avail as *const _ as u128;
-        let id = id | &self.1.lock().unwrap().gen();
-        self.0.insert(id, Box::new(avail.into()));
-        AvailHandle(id, PhantomData, PhantomData, PhantomData, PhantomData)
-    }
-    /// #### 从容器中删除一个可用性函数
-    ///
-    /// 这个函数可以根据`AvailHandle`来删除一个可用性对象。
-    ///
-    /// 将会返回被删除的可用性对象，
-    /// 如果删除失败（没有找到对应的可用性对象）则返回`None`。
-    ///
-    /// #### 参数
-    /// * `id` - 一个`AvailHandle`对象，
-    ///   该对象必须是容器中的一个可用性对象的唯一标识。
-    ///
-    /// #### 用例
-    /// ```rust
-    /// let ctx = Contenxt::new(());
-    /// let handle = ctx.avails.add(avail_fn);
-    /// ctx.avails.remove(&handle); // 删除可用性函数
-    /// fn avail_fn() {
-    ///     println!("hello world");    
-    /// }
-    /// ```
-    pub fn remove<Param, Func>(
-        &self,
-        id: &AvailHandle<T, Param, Func, Ps>,
-    ) -> Option<Box<dyn Avail<T, Ps> + 'static>>
-    where
-        Param: Params<T, Ps> + 'static,
-        Func: FnMut<Param, Output = ()> + 'static,
-    {
-        self.0.remove(&id.0).map(|a| a.1)
-    }
-}
-
 pub struct Children<Ps>(DashMap<u64, Arc<RawContext<Ps>>>, Mutex<StepRng>);
 impl<Ps> Children<Ps> {
     pub fn new() -> Self {
@@ -164,13 +62,13 @@ impl<T> From<u64> for ChildHandle<T> {
     }
 }
 
-pub struct Context<T: KAny + 'static + ?Sized, Ps> {
+pub struct Context<T: KAny + 'static + ?Sized, Ps: Clone> {
     raw: Arc<RawContext<Ps>>,
     self_id: Option<u64>,
     call_from: Option<u128>,
     _marker: PhantomData<T>,
 }
-impl<T: KAny + 'static + ?Sized, Ps> Clone for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Clone> Clone for Context<T, Ps> {
     fn clone(&self) -> Self {
         Self {
             raw: self.raw.clone(),
@@ -180,37 +78,20 @@ impl<T: KAny + 'static + ?Sized, Ps> Clone for Context<T, Ps> {
         }
     }
 }
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnOnce<(Ps,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone> FnOnce<(Ps,)> for Context<T, Ps> {
     type Output = ();
 
     extern "rust-call" fn call_once(self, args: (Ps,)) -> Self::Output {
-        self.recursive_avail(Arc::new(args.0));
+        self.recursive_avail(args.0);
     }
 }
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnMut<(Ps,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone> FnMut<(Ps,)> for Context<T, Ps> {
     extern "rust-call" fn call_mut(&mut self, args: (Ps,)) -> Self::Output {
-        self.recursive_avail(Arc::new(args.0));
+        self.recursive_avail(args.0);
     }
 }
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Fn<(Ps,)> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone> Fn<(Ps,)> for Context<T, Ps> {
     extern "rust-call" fn call(&self, args: (Ps,)) -> Self::Output {
-        self.recursive_avail(Arc::new(args.0));
-    }
-}
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnOnce<(Arc<Ps>,)> for Context<T, Ps> {
-    type Output = ();
-
-    extern "rust-call" fn call_once(self, args: (Arc<Ps>,)) -> Self::Output {
-        self.recursive_avail(args.0);
-    }
-}
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> FnMut<(Arc<Ps>,)> for Context<T, Ps> {
-    extern "rust-call" fn call_mut(&mut self, args: (Arc<Ps>,)) -> Self::Output {
-        self.recursive_avail(args.0);
-    }
-}
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Fn<(Arc<Ps>,)> for Context<T, Ps> {
-    extern "rust-call" fn call(&self, args: (Arc<Ps>,)) -> Self::Output {
         self.recursive_avail(args.0);
     }
 }
@@ -221,7 +102,7 @@ pub struct RawContext<Ps> {
     pub avails: Avails<dyn KAny, Ps>,
     pub _effects: Box<[OnceLock<Box<dyn KAny>>]>,
 }
-impl<Ps: Send + Sync> RawContext<Ps> {
+impl<Ps: Send + Sync + Clone> RawContext<Ps> {
     pub fn new<T: KAny + 'static, S: Into<Arc<T>>>(scope: S) -> Self {
         Self {
             scope: scope.into(),
@@ -232,7 +113,7 @@ impl<Ps: Send + Sync> RawContext<Ps> {
         }
     }
 }
-pub trait RawContextExt<Ps> {
+pub trait RawContextExt<Ps: Clone> {
     unsafe fn downcast_unchecked<T: KAny + ?Sized>(
         self,
         self_id: Option<u64>,
@@ -240,7 +121,7 @@ pub trait RawContextExt<Ps> {
     ) -> Context<T, Ps>;
     fn with<T: KAny + 'static>(&self, scope: T) -> (Arc<RawContext<Ps>>, u64);
 }
-impl<Ps: Send + Sync> RawContextExt<Ps> for Arc<RawContext<Ps>> {
+impl<Ps: Send + Sync + Clone> RawContextExt<Ps> for Arc<RawContext<Ps>> {
     unsafe fn downcast_unchecked<T: KAny + ?Sized>(
         self,
         self_id: Option<u64>,
@@ -267,7 +148,7 @@ impl<Ps: Send + Sync> RawContextExt<Ps> for Arc<RawContext<Ps>> {
     }
 }
 
-impl<T: KAny + 'static, Ps: Send + Sync> Context<T, Ps> {
+impl<T: KAny + 'static, Ps: Send + Sync + Clone> Context<T, Ps> {
     pub fn new(scope: T) -> Self {
         Self {
             raw: Arc::new(RawContext::new(scope)),
@@ -294,8 +175,8 @@ impl<T: KAny + 'static, Ps: Send + Sync> Context<T, Ps> {
         &self.raw.scope.as_ref().downcast_ref_unchecked()
     }
 }
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
-    pub fn recursive_avail(&self, ps: Arc<Ps>) {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone> Context<T, Ps> {
+    pub fn recursive_avail(&self, ps: Ps) {
         self.raw
             .avails
             .run_all(unsafe { self.upcast_ref() }, ps.clone());
@@ -335,7 +216,7 @@ impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Context<T, Ps> {
     }
 }
 
-impl<T: KAny, Ps: Send + Sync> Deref for Context<T, Ps> {
+impl<T: KAny, Ps: Send + Sync + Clone> Deref for Context<T, Ps> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {

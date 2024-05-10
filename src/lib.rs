@@ -13,6 +13,13 @@ pub mod context;
 pub mod plugin;
 pub use anyhow as result;
 
+pub mod prelude {
+    pub use crate::any::*;
+    pub use crate::avail::*;
+    pub use crate::context::*;
+    pub use crate::result::Result;
+}
+
 #[test]
 fn test() {
     use any::*;

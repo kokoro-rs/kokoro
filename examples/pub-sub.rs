@@ -1,13 +1,11 @@
 use std::{
-    sync::{
-        mpsc::{channel, Sender},
-        Arc,
-    },
+    sync::mpsc::{channel, Sender},
     thread,
 };
 
 use kokoro_neo::context::*;
 
+#[derive(Clone)]
 enum Event {
     Foo,
     Bar,
@@ -34,10 +32,10 @@ fn main() {
     handle.join().unwrap();
 }
 
-fn subsctiber(ctx: Context<Sender<Event>, Event>, s: Arc<Event>) {
+fn subsctiber(ctx: Context<Sender<Event>, Event>, s: Event) {
     ctx.send(Event::Foo).unwrap();
     ctx.avails().add(subsctiber);
-    if let Event::Foo = *s {
+    if let Event::Foo = s {
         println!("hello foo");
     }
 }

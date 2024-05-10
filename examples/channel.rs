@@ -1,24 +1,27 @@
-use std::{sync::Arc, thread};
+use std::thread;
 
 use kokoro_neo::context::Context;
+use kokoro_neo::result;
 
-fn main() {
+fn main() -> result::Result<()> {
     let (tx, rx) = std::sync::mpsc::channel::<String>();
     let ctx: Context<_, String> = Context::new(tx.clone());
     ctx.avails().add(subsctiber);
-    thread::spawn(move || {
-        for i in 0..10 {
-            tx.send(format!("hello {}", i)).unwrap();
-        }
-        tx.send("done".to_string()).unwrap();
-    });
+    let _handle;
+    {
+        let tx = tx.clone();
+        _handle = thread::spawn(move || {
+            for i in 0..10 {
+                tx.clone().send(format!("hello {}", i)).unwrap();
+            }
+        });
+    }
+    drop(tx);
     for ele in rx {
-        if ele.eq("done") {
-            break;
-        }
         ctx(ele);
     }
+    Ok(())
 }
-fn subsctiber(s: Arc<String>) {
-    println!("{}", *s);
+fn subsctiber(s: String) {
+    println!("{}", s);
 }

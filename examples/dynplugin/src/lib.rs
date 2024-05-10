@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use kokoro_neo::plugin::Plugin;
 use kokoro_neo::{export_plugin, result::*};
 
@@ -12,7 +10,7 @@ impl Plugin<&'static str> for MyPlugin {
         Ok(())
     }
 }
-fn print(s: Arc<&str>) {
+fn print(s: &str) {
     println!("from plugin {}", s);
 }
 impl Default for MyPlugin {

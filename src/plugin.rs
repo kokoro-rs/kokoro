@@ -1,10 +1,10 @@
 use crate::{any::*, context::*};
 use anyhow::{anyhow, Ok, Result};
-pub trait Pluggable<Ps>: Send + Sync + Sized {
+pub trait Pluggable<Ps: Clone>: Send + Sync + Sized {
     fn plug<P: Plugin<Ps>>(&self, p: P) -> Result<ChildHandle<P>>;
     fn unplug<P: Plugin<Ps>>(&self, handle: ChildHandle<P>) -> Result<Context<P, Ps>>;
 }
-impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Pluggable<Ps> for Context<T, Ps> {
+impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone> Pluggable<Ps> for Context<T, Ps> {
     fn plug<P: Plugin<Ps>>(&self, p: P) -> Result<ChildHandle<P>> {
         let child_handle = self.with(p);
         let ctx = self
@@ -21,15 +21,16 @@ impl<T: KAny + 'static + ?Sized, Ps: Send + Sync> Pluggable<Ps> for Context<T, P
         Ok(unsafe { child.downcast_unchecked(Some(handle.stable_id()), None) })
     }
 }
-pub trait Plugin<Ps>: Send + Sync + Sized {
+pub trait Plugin<Ps: Clone>: Send + Sync + Sized {
     fn load(ctx: Context<Self, Ps>) -> Result<()>;
 }
 pub mod dynamic {
-    use crate::{any::*, context::*};
+    use crate::{any::*, avail::*, context::*};
     use anyhow::{anyhow, Result};
     use libloading::{Library, Symbol};
     use std::{
-        marker::PhantomData, sync::{Arc, OnceLock, Weak}
+        marker::PhantomData,
+        sync::{Arc, OnceLock, Weak},
     };
 
     pub type LoadFn<Ps> = fn(ctx: Arc<RawContext<Ps>>, self_id: u64) -> Result<()>;
@@ -76,7 +77,9 @@ pub mod dynamic {
     pub trait DynPluggable<Ps> {
         fn dyn_plug<L: TryInto<DynPlugin<Ps>, Error = anyhow::Error>>(&self, lib: L) -> Result<()>;
     }
-    impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + 'static> DynPluggable<Ps> for Context<T, Ps> {
+    impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone + 'static> DynPluggable<Ps>
+        for Context<T, Ps>
+    {
         fn dyn_plug<L: TryInto<DynPlugin<Ps>, Error = anyhow::Error>>(&self, lib: L) -> Result<()> {
             let dyn_plugin: DynPlugin<Ps> = lib.try_into()?;
             let create_fn: Symbol<CreateFn> = unsafe { dyn_plugin.lib.get(b"__create__")? };
@@ -87,7 +90,7 @@ pub mod dynamic {
                 children: Children::new(),
                 parent: Weak::new(),
                 avails: Avails::new(),
-                _effects:Box::new([OnceLock::new()])
+                _effects: Box::new([OnceLock::new()]),
             }
             .into();
             let id = self.children_raw().add(Arc::clone(&raw));
