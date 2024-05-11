@@ -30,7 +30,7 @@ pub mod dynamic {
     use libloading::{Library, Symbol};
     use std::{
         marker::PhantomData,
-        sync::{Arc, OnceLock, Weak},
+        sync::{Arc, OnceLock},
     };
 
     pub type LoadFn<Ps> = fn(ctx: Arc<RawContext<Ps>>, self_id: u64) -> Result<()>;
@@ -88,7 +88,7 @@ pub mod dynamic {
             let raw: Arc<RawContext<Ps>> = RawContext {
                 scope,
                 children: Children::new(),
-                parent: Weak::new(),
+                parent: Arc::downgrade(self.raw_ref()),
                 avails: Avails::new(),
                 _effects: Box::new([OnceLock::new()]),
             }

@@ -214,6 +214,12 @@ impl<T: KAny + 'static + ?Sized, Ps: Send + Sync + Clone> Context<T, Ps> {
     pub fn into_raw(self) -> Arc<RawContext<Ps>> {
         self.raw
     }
+    pub fn raw(&self) -> Arc<RawContext<Ps>> {
+        self.raw.clone()
+    }
+    pub fn raw_ref(&self) -> &Arc<RawContext<Ps>> {
+        &self.raw
+    }
 }
 
 impl<T: KAny, Ps: Send + Sync + Clone> Deref for Context<T, Ps> {
