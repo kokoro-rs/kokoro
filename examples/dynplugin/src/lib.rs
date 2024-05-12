@@ -22,4 +22,4 @@ impl Default for MyPlugin {
     }
 }
 
-export_plugin!(MyPlugin, MyPlugin::default());
+export_plugin!(MyPlugin, Ok(MyPlugin::default()));

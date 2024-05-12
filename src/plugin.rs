@@ -44,7 +44,7 @@ pub mod dynamic {
     };
     pub type LoadFn<Ps, G> =
         extern "Rust" fn(ctx: Arc<RawContext<Ps, G>>, self_id: G) -> Result<()>;
-    pub type CreateFn = extern "Rust" fn() -> Arc<dyn KAny>;
+    pub type CreateFn = extern "Rust" fn() -> Result<Arc<dyn KAny>>;
     pub type VerifyFn = extern "Rust" fn() -> u64;
     pub struct DyPlugin<Ps, G> {
         pub lib: Library,
@@ -91,7 +91,7 @@ pub mod dynamic {
             let dyn_plugin: DyPlugin<Ps, G> = lib.try_into()?;
             let create_fn: Symbol<CreateFn> = unsafe { dyn_plugin.lib.get(b"__create__")? };
             let load_fn: Symbol<LoadFn<Ps, G>> = unsafe { dyn_plugin.lib.get(b"__load__")? };
-            let scope = create_fn();
+            let scope = create_fn()?;
             let raw: Arc<RawContext<Ps, G>> = RawContext {
                 scope,
                 children: Children::new(),
@@ -126,8 +126,9 @@ pub mod dynamic {
                 Ok(())
             }
             #[no_mangle]
-            extern "Rust" fn __create__() -> ::std::sync::Arc<dyn $crate::any::KAny> {
-                ::std::sync::Arc::new($instance)
+            extern "Rust" fn __create__(
+            ) -> $crate::result::Result<::std::sync::Arc<dyn $crate::any::KAny>> {
+                Ok(::std::sync::Arc::new($instance?))
             }
             #[no_mangle]
             extern "Rust" fn __verify__() -> u64 {
