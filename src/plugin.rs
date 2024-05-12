@@ -42,9 +42,10 @@ pub mod dynamic {
         marker::PhantomData,
         sync::{Arc, OnceLock},
     };
-    pub type LoadFn<Ps, G> = fn(ctx: Arc<RawContext<Ps, G>>, self_id: G) -> Result<()>;
-    pub type CreateFn = fn() -> Arc<dyn KAny>;
-    pub type VerifyFn = fn() -> u64;
+    pub type LoadFn<Ps, G> =
+        extern "Rust" fn(ctx: Arc<RawContext<Ps, G>>, self_id: G) -> Result<()>;
+    pub type CreateFn = extern "Rust" fn() -> Arc<dyn KAny>;
+    pub type VerifyFn = extern "Rust" fn() -> u64;
     pub struct DyPlugin<Ps, G> {
         pub lib: Library,
         _p: PhantomData<Ps>,
