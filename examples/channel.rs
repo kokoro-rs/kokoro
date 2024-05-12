@@ -5,7 +5,7 @@ use kokoro_neo::result;
 
 fn main() -> result::Result<()> {
     let (tx, rx) = std::sync::mpsc::channel::<String>();
-    let ctx: Context<_, String> = Context::new(tx.clone());
+    let ctx: Context<_, String, ()> = Context::new(tx.clone(), ());
     ctx.avails().add(subsctiber);
     let _handle;
     {

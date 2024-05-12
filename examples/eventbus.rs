@@ -9,7 +9,7 @@ struct EOP;
 
 fn main() -> Result<()> {
     let (tx, rx) = channel::<Arc<dyn KAny>>();
-    let ctx: Context<_, Arc<dyn KAny>> = Context::new(tx);
+    let ctx: Context<_, Arc<dyn KAny>, ()> = Context::new(tx, ());
     let ctx_ = ctx.clone();
     let handle = thread::spawn(move || {
         for event in rx {

@@ -1,10 +1,13 @@
+use kokoro_neo::context::Context;
 use kokoro_neo::plugin::Plugin;
 use kokoro_neo::{export_plugin, result::*};
 
 struct MyPlugin;
 
-impl Plugin<&'static str> for MyPlugin {
-    fn load(ctx: kokoro_neo::context::Context<Self, &'static str>) -> Result<()> {
+impl Plugin for MyPlugin {
+    type Pars = &'static str;
+    type Global = ();
+    fn load(ctx: Context<Self, Self::Pars, Self::Global>) -> Result<()> {
         ctx.avails().add(print);
         ctx("Hello");
         Ok(())
@@ -19,4 +22,4 @@ impl Default for MyPlugin {
     }
 }
 
-export_plugin!(MyPlugin, MyPlugin::default(), &'static str);
+export_plugin!(MyPlugin, MyPlugin::default());

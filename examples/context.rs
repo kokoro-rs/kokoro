@@ -1,6 +1,6 @@
 use kokoro_neo::context::Context;
 fn main() {
-    let ctx = Context::new("world");
+    let ctx = Context::new("world", ());
     ctx.avails().add(hello);
     let child_handle = ctx.with(123);
     let child = ctx.get_child(&child_handle).unwrap();
@@ -14,9 +14,9 @@ fn main() {
     // bye world
     // bye 123
 }
-fn hello(ctx: Context<&str, &str>, s: &str) {
+fn hello(ctx: Context<&str, &str, ()>, s: &str) {
     println!("{} {}", s, *ctx);
 }
-fn print(ctx: Context<i32, &str>, s: &str) {
+fn print(ctx: Context<i32, &str, ()>, s: &str) {
     println!("{} {}", s, *ctx);
 }

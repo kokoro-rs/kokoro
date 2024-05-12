@@ -13,7 +13,7 @@ enum Event {
 }
 fn main() {
     let (tx, rx) = channel::<Event>();
-    let ctx: Context<_, Event> = Context::new(tx);
+    let ctx: Context<_, Event, _> = Context::new(tx, ());
     let ctx_clone = ctx.clone();
     let handle = thread::spawn(move || {
         for ele in rx {
@@ -32,7 +32,7 @@ fn main() {
     handle.join().unwrap();
 }
 
-fn subsctiber(ctx: Context<Sender<Event>, Event>, s: Event) {
+fn subsctiber(ctx: Context<Sender<Event>, Event, ()>, s: Event) {
     ctx.send(Event::Foo).unwrap();
     ctx.avails().add(subsctiber);
     if let Event::Foo = s {
