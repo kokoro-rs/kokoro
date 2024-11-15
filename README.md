@@ -4,93 +4,112 @@
   [![docs.rs](https://img.shields.io/docsrs/kokoro)](https://docs.rs/kokoro/latest/kokoro/)
   [![Crates.io Version](https://img.shields.io/crates/v/kokoro)](https://crates.io/crates/kokoro)
   ![Crates.io License](https://img.shields.io/crates/l/kokoro)
-  
-  <p>Kokoro is a Rust-based meta-framework that prioritizes memory safety, performance, and stability to empower the creation of highly decoupled applications.</p>
+
+  <p>Kokoro is a Rust-based pluggable-framework that prioritizes memory safety, performance, and stability to empower the creation of highly decoupled applications.</p>
 
 </div>
 
 <br/>
 
-## Advantages
+## 定义
 
-- **Memory Safety 🦀**: Built with Rust's guarantees of memory safety, Kokoro eliminates the need for manual side-effect management.
-- **High Performance ⚡️**: Designed for efficiency, Kokoro ensures rapid response times and exceptional performance.
-- **Stable & Reliable 🏗️**: Continuously optimized, Kokoro aims to provide stable support for production environments in the future.
-- **Dynamic Plugins 🔌**: Supports dynamic plugins, including WASM and dynamic linking libraries, for functional expansion.
-- **Hot Module Replacement 🔄**: Simplifies the hot update process based on dynamic plugins, making it easy to understand and implement.
-- **Flexibility 🌟**: Highly decoupled by nature, Kokoro allows for easy extension or modification. Modular, loosely coupled, hot-updatable, and distributed - all possible with Kokoro.
+kokoro 项目经历了多次演进，从基于插件的模式设计框架到元框架，最后又被修改为插件模式库(~~云原生单例~~)。
 
-## Getting Started
+它的主要目标是为 Rust 应用程序提供插件模式的支持，使得各种功能之间可以基本解耦，实现模块化的编程模型。
 
-[官网](https://www.kokoro-rs.dev)
-todo
+最开始我就选择遵循 KISS 原则，我的软件仅仅只做单一的且它该做的事。
 
-## Demo
 
-```rust
-use kokoro::{dynamic_plugin::toml::toml, prelude::*};
-use kokoro_plugin_tiny_http_event::{http::Response, *};
+- simple: 仅用于支持插件模式设计。
+- stupid: 不去做任何 front 该做的事情，只做好基础的 framework。不定义接口，不固定特性。
 
-fn main() -> Result<()> {
-    // Create a context for the channel.
-    let ctx = channel_ctx();
-    // Initialize a new PluginFinder to search for plugins in the "./plugin" directory.
-    let pf = PluginFinder::new("./plugin");
-    // Find the "kokoro_plugin_tiny_http" plugin.
-    let plugin = pf.find("kokoro_plugin_tiny_http");
-    // Define the configuration for the plugin using TOML format.
-    let config = toml! {
-        host = "0.0.0.0" // The host address where the server will listen.
-        port = 1145      // The port number for the server.
-    };
-    // Load the plugin dynamically with the specified configuration.
-    ctx.plugin_dynamic(plugin, Some(config.into()))?;
-    // Subscribe to the 'hello' event.
-    ctx.subscribe(hello);
-    // Run the context synchronously.
-    ctx.run_sync();
+## 选型
 
-    // Return Ok if everything executes successfully.
-    Ok(())
-}
+市面上有多种插件模式的技术解决方案，
 
-// Define a new Path named 'Hello' targeting the "/hello" endpoint.
-path!(Hello, "/hello");
-// Define the 'hello' function to handle requests to the 'Hello' path.
-fn hello(req: PathQuery<Hello>) {
-    // Check if there is a request and take ownership of it.
-    if let Some(req) = req.take() {
-        // Respond to the request with a "Hello World!" message.
-        req.respond(Response::from_string("Hello World!")).unwrap();
-    }
-}
+例如嵌入式脚本、动态链接库、基于标准输入输出的应用程序子进程、基于 IPC 的…等等。
 
-```
+这些方案都有其优缺点，kokoro 项目的目标是选择一种简单且合适的解决方案。
 
-This code sets up a simple HTTP server that responds with “Hello World!” when the “/hello” path is accessed.
-It uses the tiny_http plugin for handling HTTP events.
+kokoro 的选型则为混合方案，该方案选用了以下几个名词用于理解：
 
-## Star History
+1. Primary: 主程序。
+2. Planet: 直接由主程序都调用的 wasm component model 插件。
+3. Satellite: 由插件启动的子进程通过 IPC 进行数据交。
 
-<a href="https://star-history.com/#kokoro-rs/kokoro&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=kokoro-rs/kokoro&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=kokoro-rs/kokoro&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=kokoro-rs/kokoro&type=Date" />
-  </picture>
-</a>
+### Primary
 
-<br/>
+Primary 是主程序，其主要功能是管理插件。
 
-## todo list
+难点：
 
-- [x] `kokoro-default-impl`
-  - [x] `kokoro-plugin-impl`
-  - [x] `kokoro-thread-impl`
-  - [x] `kokoro-service-impl`
-- [x] `kokoro-dynamic-plugin-impl`
-- [x] plugin config api
-- [ ] `loader` for dynamically and schematically loading plugins.
-- [ ] `logger` for uniform output logging of plugins.
-- [x] `k-onfig` is used to hint configuration schema.
-- [ ] `Satori (EventType only)` for instant messaging or chatbots
+1. 接口版本管理。
+2. 配置管理。
+3. 依赖管理。
+
+Kokoro 是 KISS 原则下的产物，我们不会管理配置和接口版本。
+
+但会提供最令人头疼的依赖关系(版本除外)管理解决方案。
+
+并且接口声明推荐使用 [wit](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md)。
+
+### Planet
+
+Planet 是插件，遵循单例模式，主要通过接口供 Primary 调用。
+
+格式: wasm component model
+
+接口声明: wit
+
+难点:
+
+- 插件与插件间的通信。
+
+### Satellite
+
+Satellite 是插件的子进程，主要通过 IPC 进行数据交换。
+
+Satellite 的工作方式较为特殊且低效，对于数据流的形象的描述如下：
+
+Planet -> Primary -> Satellite -> Planet -> Primary
+
+在这个过程中会顺序进行：
+
+wasm host 调用 -> IPC 通信 -> wasm host 调用返回 -> wasm host 调用
+
+~~数据流格式则为了性能考量选用 Bincode。~~
+
+wit 定义的数据格式满足以下条件：
+
+- 透明
+- 无依赖
+- 是独立的，没有堆，没有指向外部源的指针
+- 有统一且稳定的内存表示
+- 不使用指针来管理内部结构
+
+很明显，Satellite 被作为可选特性。
+
+主程序可以选择支持与否，如若主程序支持，则插件可选使用 Satellite 用于密集计算任务/系统原生操作。
+
+基本的逻辑和网络操作文件操作均可通过 wasi 进行。
+
+Satellite 主要是为副作用而生的，所以不鼓励使用。
+
+### 依赖管理
+
+依赖分为两种：
+
+1. 可选依赖。
+2. 必选依赖。
+
+在插件启动时，会检查依赖是否满足，不满足则推迟载插件，满足则直接加载插件。
+
+选用可选依赖的插件也会推迟加载，但依赖不存在不会终止加载。
+
+插件与依赖间通信的方式则为插件间的通信。
+
+### 插件与插件间的通信
+
+wasm host 调用 -> wasm component model 调用 -> wasm host 调用返回
+
+使用 wit 声明方法/函数签名。
