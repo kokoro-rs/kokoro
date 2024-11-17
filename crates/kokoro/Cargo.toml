@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 wasmtime.workspace = true
+wasmtime-wasi.workspace = true
+dashmap.workspace = true
+anyhow.workspace = true

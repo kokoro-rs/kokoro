@@ -2,6 +2,8 @@
 members = ["crates/kokoro"]
 
 [workspace.dependencies]
-
 kokoro = { path = "crates/kokoro" }
 wasmtime = "26.0.1"
+wasmtime-wasi = "26.0.1"
+dashmap = "6.1.0"
+anyhow = "1.0.93"
