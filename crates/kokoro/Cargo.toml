@@ -8,3 +8,4 @@ wasmtime.workspace = true
 wasmtime-wasi.workspace = true
 dashmap.workspace = true
 anyhow.workspace = true
+nom.workspace = true

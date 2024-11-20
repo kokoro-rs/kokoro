@@ -10,7 +10,7 @@ use crate::definitions::later::Later;
 use crate::definitions::types::SharedLinker;
 
 pub trait InnerManager<T: WasiView> {
-    fn enging(&self) -> &Engine;
+    fn engine(&self) -> &Engine;
     fn store(&mut self) -> impl AsContextMut<Data = T>;
     fn linker(&self) -> SharedLinker<T>;
     fn storing(&mut self, instance: Instance, name: &str);
@@ -20,8 +20,8 @@ pub trait InnerManager<T: WasiView> {
 pub trait Manager<T: WasiView + 'static, L: Later + 'static> {
     fn inner_mut(&mut self) -> &mut impl InnerManager<T>;
     fn inner(&self) -> &impl InnerManager<T>;
-    fn enging(&self) -> &Engine {
-        self.inner().enging()
+    fn engine(&self) -> &Engine {
+        self.inner().engine()
     }
     fn store(&mut self) -> impl AsContextMut<Data = T> {
         self.inner_mut().store()
@@ -38,11 +38,14 @@ pub trait Manager<T: WasiView + 'static, L: Later + 'static> {
     fn later(&mut self, later: L);
     fn laters_mut(&mut self) -> &mut Vec<L>;
     fn init_all_laters(&mut self) -> Result<()> {
-        todo!()
+        while let Some(later) = self.laters_mut().pop() {
+            later.init(self.inner_mut())?;
+        }
+        Ok(())
     }
     fn load(&mut self, path: impl AsRef<Path>, name: &str) -> Result<()> {
         let wasm_file = fs::read(path)?;
-        let component = Component::new(&self.enging(), &wasm_file)?;
+        let component = Component::new(&self.engine(), &wasm_file)?;
         let linker = self.linker();
         let store = self.store();
         let ins = linker.read().unwrap().instantiate(store, &component)?;

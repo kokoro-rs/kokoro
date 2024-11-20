@@ -12,7 +12,7 @@ use crate::definitions::types::SharedLinker;
 use crate::manager::manager_trait::{InnerManager, Manager};
 
 pub struct CommonInnerManager<T> {
-    enging: Engine,
+    engine: Engine,
     store: Store<T>,
     linker: SharedLinker<T>,
     instances: DashMap<String, Arc<Instance>>,
@@ -24,8 +24,8 @@ pub struct CommonManager<T> {
 }
 
 impl<T: WasiView> InnerManager<T> for CommonInnerManager<T> {
-    fn enging(&self) -> &Engine {
-        &self.enging
+    fn engine(&self) -> &Engine {
+        &self.engine
     }
 
     fn store(&mut self) -> impl AsContextMut<Data = T> {
@@ -64,13 +64,13 @@ impl<T: WasiView> CommonInnerManager<T> {
     pub fn new(data: T) -> Result<Self> {
         let mut config = Config::new();
         config.wasm_component_model(true);
-        let enging = Engine::new(&config)?;
-        let mut linker: Linker<T> = Linker::new(&enging);
+        let engine = Engine::new(&config)?;
+        let mut linker: Linker<T> = Linker::new(&engine);
         linker.allow_shadowing(true);
         add_to_linker_sync(&mut linker)?;
-        let store = Store::new(&enging, data);
+        let store = Store::new(&engine, data);
         Ok(Self {
-            enging,
+            engine,
             store,
             linker: Arc::new(RwLock::new(linker)),
             instances: DashMap::new(),
