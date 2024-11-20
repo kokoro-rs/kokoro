@@ -13,7 +13,7 @@ use nom::{
 use wasmtime::{component::*, Engine};
 use wasmtime_wasi::WasiView;
 
-use crate::manager::manager_trait::InnerManager;
+use crate::manager::manager_trait::{AsInstance, InnerManager};
 
 use super::utils::extend_add;
 
@@ -121,6 +121,9 @@ impl Later for CommonLater {
             if name.starts_with("wasi:") {
                 continue;
             }
+            if name.starts_with("primary:") {
+                continue;
+            }
             match ty {
                 types::ComponentItem::ComponentInstance(ci) => {
                     let tys = ci.exports(engine);
@@ -193,15 +196,18 @@ impl Later for LaterFunc {
                     .ok_or(anyhow!("Instance:{} does not exist.", host.name()))?;
                 let mut store = manager.store();
                 let mut export = instance
+                    .as_instance()
                     .get_export(&mut store, None, host_str)
                     .ok_or(anyhow!("Item:{} does not exist.", host_str))?;
                 for path in full_path {
                     export = instance
+                        .as_instance()
                         .get_export(&mut store, Some(&export), path)
                         .ok_or(anyhow!("Item:{} does not exist.", path))?;
                 }
                 let full_name = self.path.join("->");
                 let func = instance
+                    .as_instance()
                     .get_func(store, export)
                     .ok_or(anyhow!("Item:{} does not exist.", full_name))?;
                 return if let Err(_) = self.func.set(func) {

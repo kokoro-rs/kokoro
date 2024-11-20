@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::fs;
 use std::sync::{Arc, RwLock};
 
 use dashmap::*;
@@ -24,6 +25,7 @@ pub struct CommonManager<T> {
 }
 
 impl<T: WasiView> InnerManager<T> for CommonInnerManager<T> {
+    type Instance = Instance;
     fn engine(&self) -> &Engine {
         &self.engine
     }
@@ -36,7 +38,7 @@ impl<T: WasiView> InnerManager<T> for CommonInnerManager<T> {
         self.linker.clone()
     }
 
-    fn storing(&mut self, instance: Instance, name: &str) {
+    fn storing(&mut self, instance: Self::Instance, name: &str) {
         self.instances.insert(name.to_string(), Arc::new(instance));
     }
 
@@ -46,10 +48,11 @@ impl<T: WasiView> InnerManager<T> for CommonInnerManager<T> {
 }
 
 impl<T: WasiView + 'static> Manager<T, CommonLater> for CommonManager<T> {
-    fn inner(&self) -> &impl InnerManager<T> {
+    type Inner = CommonInnerManager<T>;
+    fn inner(&self) -> &CommonInnerManager<T> {
         &self.inner
     }
-    fn inner_mut(&mut self) -> &mut impl InnerManager<T> {
+    fn inner_mut(&mut self) -> &mut CommonInnerManager<T> {
         &mut self.inner
     }
     fn later(&mut self, later: CommonLater) {
@@ -57,6 +60,15 @@ impl<T: WasiView + 'static> Manager<T, CommonLater> for CommonManager<T> {
     }
     fn laters_mut(&mut self) -> &mut Vec<CommonLater> {
         &mut self.laters
+    }
+    fn load(&mut self, path: impl AsRef<std::path::Path>, name: &str) -> Result<()> {
+        let wasm_file = fs::read(path)?;
+        let component = Component::new(&self.engine(), &wasm_file)?;
+        let linker = self.linker();
+        let store = self.store();
+        let ins = linker.read().unwrap().instantiate(store, &component)?;
+        self.storing(ins, name);
+        Ok(())
     }
 }
 
